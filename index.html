@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Telegram Channel - Máy chủ PHP & HTML thuần</title>
-    <meta name="description" content="Ứng dụng Kênh tin nhắn Telegram thời gian thực với backend PHP (api.php), lưu trữ JSON an toàn, mã hóa mật khẩu SHA-256, Rate Limiting và phân quyền Admin." />
-    <meta property="og:title" content="Telegram Channel - PHP Backend" />
-    <meta property="og:description" content="Ứng dụng Kênh tin nhắn Telegram thời gian thực với backend PHP (api.php)." />
+    <title>Telegram Channel - Web Client</title>
+    <meta name="description" content="Kênh tin nhắn Telegram thời gian thực kết nối backend PHP (api.php), giao diện chuẩn Telegram Desktop/Web." />
+    <meta property="og:title" content="Telegram Channel - Web Client" />
+    <meta property="og:description" content="Kênh tin nhắn Telegram thời gian thực kết nối backend PHP (api.php)." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
 
@@ -23,7 +23,7 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+              sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif', 'Inter'],
             },
             colors: {
               tg: {
@@ -51,10 +51,11 @@
       };
     </script>
 
-    <!-- DOMPurify CDN for XSS Protection -->
+    <!-- DOMPurify CDN for XSS Sanitization -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 
     <style>
+      /* Telegram Chat Wallpaper Pattern */
       .tg-chat-bg {
         background-color: var(--tg-bg);
         background-image: radial-gradient(rgba(120, 150, 180, 0.08) 1.5px, transparent 1.5px);
@@ -62,35 +63,53 @@
       }
       .dark .tg-chat-bg {
         --tg-bg: #0e1621;
-        background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1.2px, transparent 1.2px);
       }
       html:not(.dark) .tg-chat-bg {
         --tg-bg: #8ea3b7;
         background-image: radial-gradient(rgba(0, 0, 0, 0.06) 1.5px, transparent 1.5px);
       }
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(140, 150, 165, 0.3); border-radius: 9999px; }
-      ::-webkit-scrollbar-thumb:hover { background: rgba(140, 150, 165, 0.5); }
-      .bubble-shadow { box-shadow: 0 1px 2px rgba(16, 35, 47, 0.15); }
+
+      /* Telegram Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(140, 150, 165, 0.35);
+        border-radius: 9999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(140, 150, 165, 0.55);
+      }
+
+      .bubble-shadow {
+        box-shadow: 0 1px 2px rgba(16, 35, 47, 0.15);
+      }
+
       @keyframes highlightPulse {
         0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(51, 144, 236, 0); }
-        50% { transform: scale(1.01); box-shadow: 0 0 0 4px rgba(51, 144, 236, 0.5); }
+        50% { transform: scale(1.015); box-shadow: 0 0 0 5px rgba(51, 144, 236, 0.5); }
       }
-      .highlight-target { animation: highlightPulse 1.8s ease-in-out; }
+      .highlight-target {
+        animation: highlightPulse 1.8s ease-in-out;
+      }
     </style>
   </head>
 
   <body class="bg-tg-lightBg dark:bg-tg-darkBg text-tg-lightText dark:text-tg-darkText font-sans min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
 
     <!-- ========================================== -->
-    <!-- HEADER -->
+    <!-- 1. TELEGRAM CHANNEL HEADER -->
     <!-- ========================================== -->
-    <header class="sticky top-0 z-40 bg-white/95 dark:bg-tg-darkSurface/95 backdrop-blur-md border-b border-tg-lightBorder dark:border-tg-darkBorder shadow-sm">
-      <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+    <header class="sticky top-0 z-40 bg-white/95 dark:bg-tg-darkSurface/95 backdrop-blur-md border-b border-tg-lightBorder dark:border-tg-darkBorder shadow-sm transition-colors duration-200">
+      <div class="max-w-4xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-3">
         
-        <!-- Left: Channel Avatar & Title -->
-        <div class="flex items-center gap-3 min-w-0 cursor-pointer group" id="channelHeaderProfileBtn">
+        <!-- Left: Channel Info (Avatar, Name, Subscribers, Status) -->
+        <div class="flex items-center gap-3 min-w-0 cursor-pointer group" id="channelHeaderProfileBtn" title="Xem thông tin kênh">
           <div class="relative flex-shrink-0">
             <img id="channelAvatar" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80" alt="Channel Avatar" class="w-11 h-11 rounded-full object-cover ring-2 ring-blue-500/30 group-hover:ring-blue-500 transition-all" />
             <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-tg-darkSurface rounded-full" title="Trực tuyến"></span>
@@ -98,7 +117,8 @@
 
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
-              <h1 id="channelName" class="font-bold text-base text-gray-900 dark:text-white truncate">Kênh Tin Tức Telegram</h1>
+              <h1 id="channelName" class="font-bold text-sm sm:text-base text-gray-900 dark:text-white truncate">Kênh Tin Tức Telegram</h1>
+              <!-- Telegram Blue Star Verified Badge -->
               <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2l2.4 2.9 3.8-.4 1.2 3.6 3.4 1.7-1.1 3.6 1.7 3.4-3.1 2.2-.4 3.8-3.7.8L12 22l-4.2-1.4-3.7-.8-.4-3.8-3.1-2.2 1.7-3.4-1.1-3.6 3.4-1.7 1.2-3.6 3.8.4L12 2zm-1.2 13.6l6.4-6.4-1.4-1.4-5 5-2.2-2.2-1.4 1.4 3.6 3.6z"/>
               </svg>
@@ -108,58 +128,70 @@
               <span>•</span>
               <span class="inline-flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400" id="serverStatusBadge">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span id="serverStatusText">PHP API Online</span>
+                <span id="serverStatusText">api.php Kết nối</span>
               </span>
             </div>
           </div>
         </div>
 
-        <!-- Right: Actions -->
+        <!-- Right: Action Icons (Search, Sound, Theme, Admin, Auth) -->
         <div class="flex items-center gap-1 sm:gap-1.5">
-          <!-- Search Button -->
+          
+          <!-- Search Toggle -->
           <button id="toggleSearchBtn" title="Tìm kiếm tin nhắn" class="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-tg-darkCard transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
           </button>
 
-          <!-- Notification Sound Button -->
-          <button id="toggleSoundBtn" title="Bật/Tắt âm thanh" class="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-tg-darkCard transition-colors">
-            <svg id="soundOnIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-            <svg id="soundOffIcon" class="w-5 h-5 hidden text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+          <!-- Sound Mute/Unmute -->
+          <button id="toggleSoundBtn" title="Bật/Tắt âm thanh thông báo" class="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-tg-darkCard transition-colors">
+            <svg id="soundOnIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            <svg id="soundOffIcon" class="w-5 h-5 hidden text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+            </svg>
           </button>
 
-          <!-- Dark/Light Theme -->
-          <button id="toggleThemeBtn" title="Đổi giao diện Sáng / Tối" class="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-tg-darkCard transition-colors">
-            <svg id="sunIcon" class="w-5 h-5 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-            <svg id="moonIcon" class="w-5 h-5 block dark:hidden text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+          <!-- Dark/Light Mode Switcher -->
+          <button id="toggleThemeBtn" title="Chuyển đổi Sáng / Tối" class="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-tg-darkCard transition-colors">
+            <svg id="sunIcon" class="w-5 h-5 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+            <svg id="moonIcon" class="w-5 h-5 block dark:hidden text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+            </svg>
           </button>
 
-          <!-- Backend Info Button -->
-          <button id="openBackendModalBtn" title="Thông tin Máy chủ PHP & MySQL" class="p-2 rounded-full text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
-          </button>
-
-          <!-- Admin Panel Button -->
+          <!-- Admin Panel Button (Admin only) -->
           <button id="adminPanelBtn" title="Bảng quản trị Admin" class="hidden relative px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
             <span class="hidden sm:inline">Admin</span>
             <span id="pendingBadgeCount" class="hidden px-1.5 py-0.2 bg-red-500 text-white rounded-full text-[10px] font-bold">0</span>
           </button>
 
-          <!-- User Account / Login Button -->
+          <!-- User Session / Login Button -->
           <button id="authBtn" class="px-3 py-1.5 rounded-lg border border-tg-lightBorder dark:border-tg-darkBorder bg-gray-50 dark:bg-tg-darkCard text-xs font-semibold hover:border-blue-500 transition-colors flex items-center gap-1.5">
-            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
             <span id="authBtnText">Đăng nhập</span>
           </button>
-        </div>
 
+        </div>
       </div>
 
-      <!-- Quick Search Bar -->
+      <!-- Live Search Bar -->
       <div id="searchBarContainer" class="hidden border-t border-tg-lightBorder dark:border-tg-darkBorder bg-gray-50 dark:bg-tg-darkSurface/90 px-4 py-2.5 transition-all">
         <div class="max-w-4xl mx-auto flex items-center gap-2">
           <div class="relative flex-1">
-            <svg class="w-4 h-4 absolute left-3 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            <input type="text" id="searchInput" placeholder="Tìm kiếm tin nhắn trong kênh..." class="w-full pl-9 pr-8 py-1.5 rounded-lg text-sm bg-white dark:bg-tg-darkCard border border-tg-lightBorder dark:border-tg-darkBorder focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-gray-100" />
+            <svg class="w-4 h-4 absolute left-3 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Tìm kiếm tin nhắn trong kênh theo từ khóa..." class="w-full pl-9 pr-8 py-1.5 rounded-lg text-sm bg-white dark:bg-tg-darkCard border border-tg-lightBorder dark:border-tg-darkBorder focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-gray-100" />
             <button id="clearSearchBtn" class="hidden absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
@@ -168,13 +200,15 @@
         </div>
       </div>
 
-      <!-- Sticky Pinned Message Banner -->
+      <!-- Sticky Pinned Message Bar -->
       <div id="pinnedBar" class="hidden border-t border-tg-lightBorder dark:border-tg-darkBorder bg-white dark:bg-tg-darkSurface px-4 py-2 shadow-sm transition-all">
         <div class="max-w-4xl mx-auto flex items-center justify-between gap-3">
-          <div id="pinnedBarContent" class="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1 group">
+          <div id="pinnedBarContent" class="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1 group" title="Bấm để cuộn nhanh tới tin nhắn này">
             <div class="w-1 self-stretch bg-blue-500 rounded-full"></div>
             <div class="p-1 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-500 flex-shrink-0">
-              <svg class="w-4 h-4 transform rotate-45" fill="currentColor" viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+              <svg class="w-4 h-4 transform rotate-45" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+              </svg>
             </div>
             <div class="min-w-0 flex-1">
               <div class="text-[11px] font-bold text-blue-500 uppercase tracking-wider">Tin nhắn đã ghim</div>
@@ -183,23 +217,27 @@
           </div>
 
           <button id="unpinHeaderBtn" title="Bỏ ghim tin nhắn" class="hidden p-1.5 text-gray-400 hover:text-red-500 rounded-lg transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
           </button>
         </div>
       </div>
     </header>
 
     <!-- ========================================== -->
-    <!-- MAIN CHAT FEED (REVERSE ORDER) -->
+    <!-- 2. MAIN CHAT FEED (REVERSE ORDER) -->
     <!-- ========================================== -->
     <main class="flex-1 tg-chat-bg relative overflow-y-auto">
       <div class="max-w-3xl mx-auto px-3 sm:px-4 py-6 flex flex-col min-h-full">
         
         <!-- Reverse Order Guide Pill -->
-        <div class="flex justify-center mb-4">
+        <div class="flex justify-center mb-4 select-none">
           <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-black/20 dark:bg-black/40 backdrop-blur-md text-white/90 shadow-sm">
-            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
-            <span>Tin nhắn MỚI NHẤT luôn hiển thị ở TRÊN CÙNG (Reverse order)</span>
+            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+            </svg>
+            <span>Tin nhắn MỚI NHẤT luôn hiển thị ở TRÊN CÙNG</span>
           </div>
         </div>
 
@@ -207,7 +245,7 @@
         <div id="messagesList" class="flex flex-col gap-3.5 flex-1">
           <div id="loadingFeed" class="text-center py-12 text-gray-400 text-sm flex flex-col items-center gap-2">
             <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <span>Đang tải dữ liệu từ api.php...</span>
+            <span>Đang tải tin nhắn từ api.php...</span>
           </div>
         </div>
 
@@ -215,7 +253,7 @@
     </main>
 
     <!-- ========================================== -->
-    <!-- COMPOSER & STATUS FOOTER -->
+    <!-- 3. COMPOSER & STATUS FOOTER -->
     <!-- ========================================== -->
     <footer class="sticky bottom-0 z-30 bg-white/95 dark:bg-tg-darkSurface/95 backdrop-blur-md border-t border-tg-lightBorder dark:border-tg-darkBorder">
       <div class="max-w-3xl mx-auto p-3 sm:p-4">
@@ -233,8 +271,11 @@
 
             <!-- Rate Limit Badge -->
             <div id="rateLimitBadge" class="hidden ml-auto text-amber-500 font-semibold flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-              <span>Rate limit 2s: Chờ <span id="rateLimitSeconds">2</span>s...</span>
+              <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <span>Rate limit: Chờ <span id="rateLimitSeconds">2</span>s...</span>
             </div>
           </div>
 
@@ -253,14 +294,16 @@
             <button type="button" class="emoji-btn hover:scale-125 transition-transform p-1">💯</button>
           </div>
 
-          <!-- Textarea & Send Button -->
+          <!-- Input Box & Send Button -->
           <div class="flex items-end gap-2">
             <div class="flex-1 relative bg-gray-100 dark:bg-tg-darkCard rounded-2xl border border-tg-lightBorder dark:border-tg-darkBorder focus-within:border-blue-500 transition-colors">
               <textarea id="messageInput" rows="1" placeholder="Viết tin nhắn cho kênh... (Enter để gửi, Shift+Enter xuống dòng)" class="w-full px-4 py-2.5 text-sm bg-transparent border-0 focus:outline-none resize-none max-h-32 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"></textarea>
             </div>
 
             <button id="sendMessageBtn" class="w-11 h-11 rounded-full bg-blue-500 hover:bg-blue-600 active:scale-95 text-white flex items-center justify-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all flex-shrink-0" title="Gửi tin nhắn">
-              <svg class="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              <svg class="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
             </button>
           </div>
 
@@ -284,8 +327,8 @@
         <div id="pendingNoticeContainer" class="hidden flex items-center gap-3 py-2 px-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs sm:text-sm">
           <span class="text-xl animate-pulse">⏳</span>
           <div class="flex-1">
-            <div class="font-semibold">Tài khoản <span id="pendingUsernameSpan" class="underline"></span> đang chờ Admin duyệt!</div>
-            <div class="text-xs opacity-90">Hiện tại bạn chỉ có quyền XEM tin nhắn. Vui lòng chờ Admin phê duyệt để được đăng tin.</div>
+            <div class="font-semibold">Tài khoản <span id="pendingUsernameSpan" class="underline"></span> đang chờ Admin phê duyệt!</div>
+            <div class="text-xs opacity-90">Hiện tại bạn chỉ có quyền XEM tin nhắn. Vui lòng chờ Admin phê duyệt quyền để đăng tin.</div>
           </div>
           <button id="logoutPendingBtn" class="text-xs text-red-500 hover:underline font-semibold whitespace-nowrap">Đăng xuất</button>
         </div>
@@ -294,10 +337,10 @@
     </footer>
 
     <!-- ========================================== -->
-    <!-- MODALS -->
+    <!-- 4. MODALS -->
     <!-- ========================================== -->
 
-    <!-- 1. AUTH MODAL (Login / Register) -->
+    <!-- Modal 1: Auth Modal (Login / Register) -->
     <div id="authModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-white dark:bg-tg-darkSurface border border-tg-lightBorder dark:border-tg-darkBorder rounded-2xl w-full max-w-md shadow-2xl overflow-hidden transition-all transform">
         
@@ -306,7 +349,7 @@
             <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">TG</div>
             <div>
               <h3 id="authModalTitle" class="font-bold text-gray-900 dark:text-white text-base">Đăng nhập Telegram</h3>
-              <p class="text-xs text-tg-lightTextSub dark:text-tg-darkTextSub">Xác thực với Backend PHP (api.php)</p>
+              <p class="text-xs text-tg-lightTextSub dark:text-tg-darkTextSub">Xác thực bảo mật với backend api.php</p>
             </div>
           </div>
           <button id="closeAuthModalBtn" class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg">
@@ -330,7 +373,7 @@
 
           <div>
             <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Tên đăng nhập (Username)</label>
-            <input type="text" id="usernameInput" required placeholder="Nhập username..." class="w-full px-3.5 py-2 rounded-lg text-sm bg-gray-50 dark:bg-tg-darkCard border border-tg-lightBorder dark:border-tg-darkBorder text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="text" id="usernameInput" required placeholder="Nhập username (tối thiểu 3 ký tự)..." class="w-full px-3.5 py-2 rounded-lg text-sm bg-gray-50 dark:bg-tg-darkCard border border-tg-lightBorder dark:border-tg-darkBorder text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div>
@@ -338,7 +381,7 @@
             <input type="password" id="passwordInput" required placeholder="Nhập mật khẩu..." class="w-full px-3.5 py-2 rounded-lg text-sm bg-gray-50 dark:bg-tg-darkCard border border-tg-lightBorder dark:border-tg-darkBorder text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <p class="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
               <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-              <span>Mật khẩu được mã hóa SHA-256 an toàn trong file JSON backend.</span>
+              <span>Mật khẩu được mã hóa SHA-256 an toàn trước khi lưu.</span>
             </p>
           </div>
 
@@ -356,7 +399,7 @@
       </div>
     </div>
 
-    <!-- 2. ADMIN MANAGEMENT MODAL -->
+    <!-- Modal 2: Admin Panel Modal -->
     <div id="adminModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
       <div class="bg-white dark:bg-tg-darkSurface border border-tg-lightBorder dark:border-tg-darkBorder rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
@@ -365,7 +408,7 @@
             <span class="p-2 rounded-lg bg-blue-500/10 text-blue-500 font-bold">👑</span>
             <div>
               <h3 class="font-bold text-gray-900 dark:text-white text-base">Bảng Quản Trị Kênh (Admin)</h3>
-              <p class="text-xs text-tg-lightTextSub dark:text-tg-darkTextSub">Duyệt thành viên, quản lý tài khoản & cài đặt kênh trên PHP</p>
+              <p class="text-xs text-tg-lightTextSub dark:text-tg-darkTextSub">Duyệt thành viên, quản lý tài khoản & cài đặt kênh</p>
             </div>
           </div>
           <button id="closeAdminModalBtn" class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg">
@@ -382,6 +425,7 @@
           <button id="adminTabSettings" class="flex-1 py-2.5 border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Cài đặt kênh</button>
         </div>
 
+        <!-- Tab 1: Pending Users -->
         <div id="adminPendingContent" class="p-4 overflow-y-auto flex-1 space-y-3">
           <div id="pendingEmptyMessage" class="hidden text-center py-8 text-gray-400 text-sm">
             ✅ Không có tài khoản nào đang chờ duyệt.
@@ -389,10 +433,12 @@
           <div id="pendingUsersList" class="space-y-2"></div>
         </div>
 
+        <!-- Tab 2: All Users -->
         <div id="adminUsersContent" class="p-4 overflow-y-auto flex-1 hidden space-y-2">
           <div id="allUsersList" class="space-y-2"></div>
         </div>
 
+        <!-- Tab 3: Channel Settings -->
         <div id="adminSettingsContent" class="p-4 overflow-y-auto flex-1 hidden">
           <form id="channelSettingsForm" class="space-y-4">
             <div>
@@ -414,7 +460,7 @@
       </div>
     </div>
 
-    <!-- 3. EDIT MESSAGE MODAL -->
+    <!-- Modal 3: Edit Message Modal -->
     <div id="editMessageModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-white dark:bg-tg-darkSurface border border-tg-lightBorder dark:border-tg-darkBorder rounded-2xl w-full max-w-lg shadow-2xl p-5 space-y-4">
         <div class="flex items-center justify-between">
@@ -436,59 +482,16 @@
       </div>
     </div>
 
-    <!-- 4. BACKEND INFO & PHP SETUP MODAL -->
-    <div id="backendModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-      <div class="bg-white dark:bg-tg-darkSurface border border-tg-lightBorder dark:border-tg-darkBorder rounded-2xl w-full max-w-xl shadow-2xl p-5 space-y-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-2xl">🐘</span>
-            <div>
-              <h3 class="font-bold text-gray-900 dark:text-white text-base">Thông tin Máy chủ PHP & api.php</h3>
-              <p class="text-xs text-tg-lightTextSub dark:text-tg-darkTextSub">Kiến trúc 2 file độc lập (index.html + api.php)</p>
-            </div>
-          </div>
-          <button id="closeBackendModalBtn" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
-        </div>
-
-        <div class="space-y-3 text-xs sm:text-sm">
-          <div class="p-3 bg-gray-50 dark:bg-tg-darkCard rounded-xl border border-tg-lightBorder dark:border-tg-darkBorder">
-            <div class="font-bold text-gray-900 dark:text-white mb-1">📂 Cấu trúc thư mục khi upload lên Host:</div>
-            <pre class="font-mono text-xs text-blue-500 dark:text-blue-400">/public_html
-├── index.html   (Giao diện Telegram Channel + Tailwind CDN)
-├── api.php      (Xử lý REST API, JSON DB, mã hóa SHA-256)
-└── data/        (Tự động tạo: users.json, messages.json, channel.json)</pre>
-          </div>
-
-          <div class="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
-            <strong>✅ Tương thích:</strong> PHP 7.4, 8.0, 8.1, 8.2, 8.3 (Apache / Nginx / XAMPP / Laragon / cPanel / DirectAdmin).
-          </div>
-
-          <div class="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300">
-            <strong>🔑 Tài khoản Quản trị:</strong><br/>
-            Username: <code>admin</code> | Mật khẩu: <code>0386744127</code> (Tự động hash SHA-256 trong <code>data/users.json</code>).
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- TOAST CONTAINER -->
     <div id="toastContainer" class="fixed bottom-20 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- ========================================================================= -->
-    <!-- JAVASCRIPT FETCH LOGIC FROM api.php -->
+    <!-- 5. JAVASCRIPT APPLICATION LOGIC (POLLING api.php) -->
     <!-- ========================================================================= -->
     <script>
-      /**
-       * =========================================================================
-       * JAVASCRIPT CLIENT FOR TELEGRAM CHANNEL (PHP BACKEND API)
-       * =========================================================================
-       */
-
       const API_URL = 'api.php';
       const STORAGE_USER_SESSION = 'tg_php_session_user';
-      const STORAGE_LOCAL_FALLBACK = 'tg_local_cache_v2';
+      const STORAGE_LOCAL_FALLBACK = 'tg_local_cache_v3';
 
       const state = {
         currentUser: null, // { id, username, role, status, token }
@@ -505,11 +508,10 @@
         isRateLimited: false,
         editingMessageId: null,
         activeTab: 'login',
-        activeAdminTab: 'pending',
-        isPhpConnected: false
+        activeAdminTab: 'pending'
       };
 
-      // Sound notification engine
+      // --- WEB AUDIO API: REALISTIC TELEGRAM CHIME ---
       let soundEnabled = localStorage.getItem('tg_sound_enabled') !== 'false';
       let audioCtx = null;
 
@@ -526,8 +528,9 @@
           osc.connect(gain);
           gain.connect(audioCtx.destination);
 
-          osc.frequency.setValueAtTime(587.33, now); // D5
-          osc.frequency.setValueAtTime(880.00, now + 0.08); // A5
+          // Iconic Telegram chime: D5 followed by A5
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.setValueAtTime(880.00, now + 0.08);
 
           gain.gain.setValueAtTime(0.18, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
@@ -548,6 +551,7 @@
         }
       }
 
+      // XSS Sanitizer
       function sanitizeText(raw) {
         if (!raw) return '';
         let clean = typeof DOMPurify !== 'undefined'
@@ -556,12 +560,12 @@
 
         const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
         clean = clean.replace(urlRegex, (url) => {
-          return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline break-all">${url}</a>`;
+          return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline break-all inline-flex items-center gap-0.5">${url}</a>`;
         });
         return clean.replace(/\n/g, '<br/>');
       }
 
-      // --- FETCH HELPER WITH AUTH TOKEN ---
+      // --- FETCH API CALL TO api.php (WITH INTELLIGENT RUNTIME FALLBACK) ---
       async function apiFetch(action, options = {}) {
         const url = `${API_URL}?action=${encodeURIComponent(action)}`;
         const headers = {
@@ -577,13 +581,22 @@
             ...options,
             headers
           });
-          const data = await res.json();
-          state.isPhpConnected = true;
-          updateServerBadge(true);
-          return data;
+          const text = await res.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch (jsonErr) {
+            // If the server served raw PHP source code because PHP is not installed in current runner
+            updateServerBadge(false);
+            return fallbackLocalApi(action, options);
+          }
+
+          if (data && data.status) {
+            updateServerBadge(true);
+            return data;
+          }
+          return fallbackLocalApi(action, options);
         } catch (err) {
-          // If PHP backend is not reachable (e.g. static Vite preview environment)
-          state.isPhpConnected = false;
           updateServerBadge(false);
           return fallbackLocalApi(action, options);
         }
@@ -601,7 +614,7 @@
         }
       }
 
-      // Fallback local simulator when api.php cannot be executed on static node dev server
+      // In-browser mock engine ensuring 100% interactivity before uploading to PHP host
       function fallbackLocalApi(action, options) {
         let localCache = JSON.parse(localStorage.getItem(STORAGE_LOCAL_FALLBACK) || 'null');
         if (!localCache) {
@@ -626,6 +639,15 @@
                 isPinned: true,
                 isEdited: false,
                 views: 520
+              },
+              'msg_02': {
+                id: 'msg_02',
+                author: 'admin',
+                text: '⚡ Hệ thống hỗ trợ đầy đủ các tính năng: Ghim tin, Chỉnh sửa, Xóa, Đếm lượt xem thời gian thực, Rate limit chống spam 2 giây và Phân quyền duyệt thành viên.',
+                timestamp: now - 1800000,
+                isPinned: false,
+                isEdited: false,
+                views: 310
               }
             }
           };
@@ -651,7 +673,7 @@
           return { status: 'error', message: 'Tên đăng nhập không đúng!' };
         } else if (action === 'register') {
           const newId = 'usr_' + Date.now();
-          const newUser = { id: newId, username: body.username, role: 'user', status: 'pending', token: 'token_' + newId };
+          const newUser = { id: newId, username: body.username, role: 'user', status: 'pending', token: 'token_' + newId, createdAt: Date.now() };
           localCache.users[newId] = newUser;
           localStorage.setItem(STORAGE_LOCAL_FALLBACK, JSON.stringify(localCache));
           return { status: 'success', token: newUser.token, user: newUser };
@@ -702,30 +724,42 @@
           delete localCache.users[body.id];
           localStorage.setItem(STORAGE_LOCAL_FALLBACK, JSON.stringify(localCache));
           return { status: 'success' };
+        } else if (action === 'toggle_role') {
+          if (localCache.users[body.id]) {
+            localCache.users[body.id].role = localCache.users[body.id].role === 'admin' ? 'user' : 'admin';
+          }
+          localStorage.setItem(STORAGE_LOCAL_FALLBACK, JSON.stringify(localCache));
+          return { status: 'success' };
         } else if (action === 'update_channel') {
           if (body.name) localCache.channel.name = body.name;
           if (body.avatar) localCache.channel.avatar = body.avatar;
           if (body.description) localCache.channel.description = body.description;
           localStorage.setItem(STORAGE_LOCAL_FALLBACK, JSON.stringify(localCache));
           return { status: 'success' };
+        } else if (action === 'increment_views') {
+          if (localCache.messages[body.id]) {
+            localCache.messages[body.id].views = (localCache.messages[body.id].views || 0) + 1;
+            localStorage.setItem(STORAGE_LOCAL_FALLBACK, JSON.stringify(localCache));
+          }
+          return { status: 'success' };
         }
         return { status: 'error', message: 'Action mock error' };
       }
 
-      // --- REALTIME SYNC LOOP ---
+      // --- REALTIME SYNC (POLLING EVERY 2.5 SECONDS) ---
       let previousMessageCount = 0;
 
       async function syncData() {
         const res = await apiFetch('get_data');
         if (res && res.status === 'success') {
-          // Channel Info
+          // 1. Channel Info
           if (res.channel_info) {
             state.channelInfo = { ...state.channelInfo, ...res.channel_info };
             renderChannelHeader();
             renderPinnedBar();
           }
 
-          // Messages
+          // 2. Messages Sync
           const newMessages = res.messages || {};
           const prevKeys = Object.keys(state.messages);
           const newKeys = Object.keys(newMessages);
@@ -741,8 +775,8 @@
           state.messages = newMessages;
           renderMessages();
 
-          // Refresh Admin users if admin modal is open
-          if (state.currentUser?.role === 'admin' && !document.getElementById('adminModal').classList.contains('hidden')) {
+          // 3. Keep current user session in sync with database (e.g. status changes from pending -> approved)
+          if (state.currentUser && state.currentUser.role === 'admin' && !document.getElementById('adminModal').classList.contains('hidden')) {
             loadAdminUsers();
           }
         }
@@ -757,7 +791,7 @@
         }
       }
 
-      // --- RENDER FUNCTIONS ---
+      // --- RENDERING MODULES ---
       function renderChannelHeader() {
         document.getElementById('channelName').textContent = state.channelInfo.name;
         document.getElementById('channelAvatar').src = state.channelInfo.avatar;
@@ -791,6 +825,9 @@
         }
       }
 
+      /**
+       * RENDER MESSAGES FEED (REVERSE ORDER: NEWEST MESSAGES AT TOP)
+       */
       function renderMessages() {
         const container = document.getElementById('messagesList');
         const messages = Object.values(state.messages);
@@ -798,6 +835,7 @@
         // Sort descending: newest timestamp first
         let sorted = messages.sort((a, b) => b.timestamp - a.timestamp);
 
+        // Realtime keyword search
         if (state.searchQuery.trim()) {
           const q = state.searchQuery.toLowerCase();
           sorted = sorted.filter(m => m.text.toLowerCase().includes(q) || m.author.toLowerCase().includes(q));
@@ -810,7 +848,7 @@
           container.innerHTML = `
             <div class="text-center py-12 text-gray-400 text-sm flex flex-col items-center gap-2">
               <span class="text-3xl">📭</span>
-              <span>${state.searchQuery ? 'Không tìm thấy tin nhắn.' : 'Chưa có tin nhắn nào trong kênh.'}</span>
+              <span>${state.searchQuery ? 'Không tìm thấy tin nhắn phù hợp.' : 'Chưa có tin nhắn nào trong kênh.'}</span>
             </div>
           `;
           return;
@@ -833,15 +871,18 @@
           return `
             <div id="msg-${msg.id}" class="message-card group relative flex flex-col transition-all duration-300 ${isPinned ? 'ring-2 ring-blue-500/40 rounded-2xl p-1' : ''}">
               
+              <!-- Pinned Tag if pinned -->
               ${isPinned ? `
-                <div class="flex items-center gap-1 text-[11px] font-bold text-blue-500 dark:text-blue-400 mb-1 px-2">
+                <div class="flex items-center gap-1 text-[11px] font-bold text-blue-500 dark:text-blue-400 mb-1 px-2 select-none">
                   <svg class="w-3.5 h-3.5 transform rotate-45" fill="currentColor" viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
                   <span>TIN NHẮN ĐÃ GHIM</span>
                 </div>
               ` : ''}
 
+              <!-- Telegram Bubble Box -->
               <div class="relative bg-white dark:bg-tg-darkCard rounded-2xl px-4 py-3 border border-tg-lightBorder dark:border-tg-darkBorder bubble-shadow hover:border-blue-400/50 transition-colors">
                 
+                <!-- Bubble Top: Author & 3-dots Menu -->
                 <div class="flex items-center justify-between gap-2 mb-1.5">
                   <div class="flex items-center gap-1.5">
                     <span class="font-bold text-xs sm:text-sm text-blue-600 dark:text-tg-blueDark flex items-center gap-1">
@@ -852,6 +893,7 @@
                     ` : ''}
                   </div>
 
+                  <!-- 3-Dots Dropdown Trigger -->
                   <div class="relative">
                     <button class="msg-menu-btn p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-tg-darkSurface transition-colors" data-id="${msg.id}" title="Tùy chọn">
                       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
@@ -883,20 +925,25 @@
                   </div>
                 </div>
 
+                <!-- Message Body: Sanitized Text -->
                 <div class="text-sm leading-relaxed text-gray-900 dark:text-gray-100 break-words font-normal">
                   ${sanitizedText}
                 </div>
 
+                <!-- Message Footer: Views, Edited badge, Timestamp, Checkmarks -->
                 <div class="flex items-center justify-end gap-2.5 mt-2 pt-1 border-t border-gray-100 dark:border-tg-darkBorder/40 text-[11px] text-tg-lightTextSub dark:text-tg-darkTextSub select-none">
                   ${msg.isEdited ? `<span class="italic text-gray-400 dark:text-gray-500">đã sửa</span>` : ''}
 
-                  <button class="view-increment-btn flex items-center gap-1 hover:text-blue-500 transition-colors" data-id="${msg.id}" title="Lượt xem">
+                  <!-- Eye Views Counter -->
+                  <button class="view-increment-btn flex items-center gap-1 hover:text-blue-500 transition-colors" data-id="${msg.id}" title="Lượt xem (Click để tăng)">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                     <span>${msg.views || 1}</span>
                   </button>
 
+                  <!-- Time -->
                   <span title="${dateStr}">${timeStr}</span>
-                  <span class="text-blue-500 dark:text-blue-400 font-bold">✓✓</span>
+                  <!-- Telegram Checkmark -->
+                  <span class="text-blue-500 dark:text-blue-400 font-bold" title="Đã gửi">✓✓</span>
                 </div>
 
               </div>
@@ -908,6 +955,7 @@
       }
 
       function attachMessageEventHandlers() {
+        // Toggle 3-dots dropdown
         document.querySelectorAll('.msg-menu-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -920,6 +968,7 @@
           });
         });
 
+        // Copy text
         document.querySelectorAll('.copy-btn').forEach(btn => {
           btn.addEventListener('click', () => {
             const text = decodeURIComponent(btn.getAttribute('data-text') || '');
@@ -929,6 +978,7 @@
           });
         });
 
+        // Pin / Unpin
         document.querySelectorAll('.pin-btn').forEach(btn => {
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-id');
@@ -943,6 +993,7 @@
           });
         });
 
+        // Edit
         document.querySelectorAll('.edit-btn').forEach(btn => {
           btn.addEventListener('click', () => {
             const id = btn.getAttribute('data-id');
@@ -956,6 +1007,7 @@
           });
         });
 
+        // Delete
         document.querySelectorAll('.delete-btn').forEach(btn => {
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-id');
@@ -971,6 +1023,7 @@
           });
         });
 
+        // Increment Views
         document.querySelectorAll('.view-increment-btn').forEach(btn => {
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-id');
@@ -991,7 +1044,7 @@
       }
       document.addEventListener('click', () => closeAllMenus());
 
-      // --- AUTH UI ---
+      // --- AUTH UI STATE ---
       function updateAuthUI() {
         const user = state.currentUser;
         const authBtnText = document.getElementById('authBtnText');
@@ -1057,7 +1110,7 @@
         const rawText = input.value.trim();
         if (!rawText) return;
 
-        // Start countdown UI
+        // Visual Countdown
         startRateLimiting();
 
         const pinCheckbox = document.getElementById('pinCheckbox');
@@ -1125,6 +1178,7 @@
           if (adminPendingBadge) adminPendingBadge.textContent = '0';
         }
 
+        // Tab 1: Pending Users
         if (pendingUsers.length === 0) {
           emptyMsg.classList.remove('hidden');
           pendingContainer.innerHTML = '';
@@ -1171,7 +1225,7 @@
           });
         }
 
-        // All Users
+        // Tab 2: All Users
         usersContainer.innerHTML = allUsers.map(u => {
           const isSelf = state.currentUser?.id === u.id;
           return `
@@ -1223,7 +1277,7 @@
         }, 3200);
       }
 
-      // --- AUTH MODAL LOGIC ---
+      // --- AUTH MODAL TAB CONTROL ---
       function showAuthModal(tab = 'login') {
         state.activeTab = tab;
         const modal = document.getElementById('authModal');
@@ -1251,7 +1305,7 @@
         document.getElementById('usernameInput').focus();
       }
 
-      // --- EVENT LISTENERS ---
+      // --- EVENT HANDLERS REGISTRATION ---
       function setupListeners() {
         // Theme
         document.getElementById('toggleThemeBtn').addEventListener('click', () => {
@@ -1354,6 +1408,16 @@
           }
         });
 
+        // Channel Header click
+        document.getElementById('channelHeaderProfileBtn').addEventListener('click', () => {
+          if (state.currentUser?.role === 'admin') {
+            document.getElementById('adminModal').classList.remove('hidden');
+            switchAdminTab('settings');
+          } else {
+            showToast(`Kênh: ${state.channelInfo.name} - ${state.channelInfo.description}`, "info");
+          }
+        });
+
         // Auth Buttons
         document.getElementById('authBtn').addEventListener('click', () => {
           if (state.currentUser) {
@@ -1411,7 +1475,7 @@
           }
         });
 
-        // Admin Modal
+        // Admin Panel Controls
         document.getElementById('adminPanelBtn').addEventListener('click', () => {
           document.getElementById('adminModal').classList.remove('hidden');
           loadAdminUsers();
@@ -1457,10 +1521,6 @@
           }
         });
 
-        // Backend Info Modal
-        document.getElementById('openBackendModalBtn').addEventListener('click', () => document.getElementById('backendModal').classList.remove('hidden'));
-        document.getElementById('closeBackendModalBtn').addEventListener('click', () => document.getElementById('backendModal').classList.add('hidden'));
-
         // Send Message
         document.getElementById('sendMessageBtn').addEventListener('click', handleSendMessage);
         document.getElementById('messageInput').addEventListener('keydown', (e) => {
@@ -1470,7 +1530,7 @@
           }
         });
 
-        // Emoji buttons
+        // Emoji Buttons
         document.querySelectorAll('.emoji-btn').forEach(btn => {
           btn.addEventListener('click', () => {
             const input = document.getElementById('messageInput');
@@ -1511,7 +1571,7 @@
       async function init() {
         setupListeners();
 
-        // Restore session
+        // Restore user session
         try {
           const session = JSON.parse(localStorage.getItem(STORAGE_USER_SESSION) || 'null');
           if (session) state.currentUser = session;
@@ -1523,7 +1583,7 @@
         const loadingFeed = document.getElementById('loadingFeed');
         if (loadingFeed) loadingFeed.remove();
 
-        // Start polling every 2.5s for real-time updates
+        // Realtime Polling loop every 2.5 seconds
         setInterval(syncData, 2500);
       }
 
