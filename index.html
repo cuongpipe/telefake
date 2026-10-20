@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Telegram Channel - Firebase REST API JSON</title>
-    <meta name="description" content="Ứng dụng Kênh tin nhắn Telegram tương tác với Firebase Realtime Database qua REST API JSON thuần (fetch), không dùng SDK." />
-    <meta property="og:title" content="Telegram Channel - Firebase REST API" />
-    <meta property="og:description" content="Kênh tin nhắn Telegram thời gian thực qua REST API JSON thuần." />
+    <title>Telegram Channel - PHP & Firebase REST API</title>
+    <meta name="description" content="Ứng dụng Kênh tin nhắn Telegram thời gian thực kết nối backend PHP (api.php) qua Firebase Realtime Database REST API." />
+    <meta property="og:title" content="Telegram Channel - PHP & Firebase REST API" />
+    <meta property="og:description" content="Kênh tin nhắn Telegram thời gian thực kết nối backend PHP qua Firebase REST API." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
 
@@ -50,7 +50,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 
     <style>
-      /* Telegram Dark Mode Chat Wallpaper Pattern */
+      /* Telegram Dark Mode Wallpaper Pattern */
       .tg-chat-bg {
         background-color: #0e1621;
         background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1.2px, transparent 1.2px);
@@ -90,12 +90,12 @@
   <body class="bg-tg-darkBg text-tg-darkText font-sans min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
 
     <!-- ========================================== -->
-    <!-- 1. TELEGRAM CHANNEL HEADER (DARK MODE) -->
+    <!-- 1. TELEGRAM HEADER (DARK MODE) -->
     <!-- ========================================== -->
     <header class="sticky top-0 z-40 bg-tg-darkSurface/95 backdrop-blur-md border-b border-tg-darkBorder shadow-sm">
       <div class="max-w-4xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-3">
         
-        <!-- Left: Channel Info (Avatar, Name, Subscribers, REST Status) -->
+        <!-- Left: Channel Avatar & Details -->
         <div class="flex items-center gap-3 min-w-0 cursor-pointer group" id="channelHeaderProfileBtn" title="Xem thông tin kênh">
           <div class="relative flex-shrink-0">
             <img id="channelAvatar" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80" alt="Channel Avatar" class="w-11 h-11 rounded-full object-cover ring-2 ring-blue-500/30 group-hover:ring-blue-500 transition-all" />
@@ -105,7 +105,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <h1 id="channelName" class="font-bold text-sm sm:text-base text-white truncate">Kênh Tin Tức Telegram</h1>
-              <!-- Telegram Blue Star Verified Badge -->
+              <!-- Telegram Verified Star Badge -->
               <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2l2.4 2.9 3.8-.4 1.2 3.6 3.4 1.7-1.1 3.6 1.7 3.4-3.1 2.2-.4 3.8-3.7.8L12 22l-4.2-1.4-3.7-.8-.4-3.8-3.1-2.2 1.7-3.4-1.1-3.6 3.4-1.7 1.2-3.6 3.8.4L12 2zm-1.2 13.6l6.4-6.4-1.4-1.4-5 5-2.2-2.2-1.4 1.4 3.6 3.6z"/>
               </svg>
@@ -113,15 +113,15 @@
             <div class="flex items-center gap-2 text-xs text-tg-darkTextSub">
               <span id="subscribersCountText">1,248 người đăng ký</span>
               <span>•</span>
-              <span class="inline-flex items-center gap-1 font-medium text-emerald-400" id="serverStatusBadge" title="Nhấp để đổi URL Firebase REST">
+              <span class="inline-flex items-center gap-1 font-medium text-emerald-400" id="serverStatusBadge">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span id="serverStatusText">REST API (2s)</span>
+                <span id="serverStatusText">api.php (2s Polling)</span>
               </span>
             </div>
           </div>
         </div>
 
-        <!-- Right: Action Buttons (Search, Sound, Firebase Config, Admin, Auth) -->
+        <!-- Right: Action Buttons -->
         <div class="flex items-center gap-1 sm:gap-1.5">
           
           <!-- Search Button -->
@@ -132,20 +132,12 @@
           </button>
 
           <!-- Notification Sound Button -->
-          <button id="toggleSoundBtn" title="Bật/Tắt âm thanh" class="p-2 rounded-full text-gray-300 hover:bg-tg-darkCard transition-colors">
+          <button id="toggleSoundBtn" title="Bật/Tắt âm thanh thông báo" class="p-2 rounded-full text-gray-300 hover:bg-tg-darkCard transition-colors">
             <svg id="soundOnIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
             </svg>
             <svg id="soundOffIcon" class="w-5 h-5 hidden text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
-            </svg>
-          </button>
-
-          <!-- Firebase REST API Config Button -->
-          <button id="openFirebaseConfigBtn" title="Cấu hình Firebase Realtime Database URL" class="p-2 rounded-full text-amber-400 hover:bg-tg-darkCard transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
           </button>
 
@@ -230,7 +222,7 @@
         <div id="messagesList" class="flex flex-col gap-3.5 flex-1">
           <div id="loadingFeed" class="text-center py-12 text-gray-400 text-sm flex flex-col items-center gap-2">
             <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <span>Đang tải tin nhắn qua Firebase REST API JSON...</span>
+            <span>Đang tải dữ liệu từ api.php...</span>
           </div>
         </div>
 
@@ -322,7 +314,7 @@
     </footer>
 
     <!-- ========================================== -->
-    <!-- 4. MODALS (AUTH, ADMIN, FIREBASE CONFIG, EDIT) -->
+    <!-- 4. MODALS (AUTH, ADMIN, EDIT) -->
     <!-- ========================================== -->
 
     <!-- Modal 1: Auth Modal (Login / Register) -->
@@ -334,7 +326,7 @@
             <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">TG</div>
             <div>
               <h3 id="authModalTitle" class="font-bold text-white text-base">Đăng nhập Telegram</h3>
-              <p class="text-xs text-tg-darkTextSub">Xác thực REST API với mật khẩu SHA-256</p>
+              <p class="text-xs text-tg-darkTextSub">Xác thực với Backend PHP (api.php)</p>
             </div>
           </div>
           <button id="closeAuthModalBtn" class="p-1.5 text-gray-400 hover:text-gray-200 rounded-lg">
@@ -366,7 +358,7 @@
             <input type="password" id="passwordInput" required placeholder="Nhập mật khẩu..." class="w-full px-3.5 py-2 rounded-lg text-sm bg-tg-darkCard border border-tg-darkBorder text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <p class="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
               <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-              <span>Mật khẩu được mã hóa SHA-256 an toàn bằng Web Crypto API trước khi gửi REST API.</span>
+              <span>Mật khẩu được mã hóa SHA-256 an toàn trong node /users.json trên Firebase.</span>
             </p>
           </div>
 
@@ -393,7 +385,7 @@
             <span class="p-2 rounded-lg bg-blue-500/10 text-blue-400 font-bold">👑</span>
             <div>
               <h3 class="font-bold text-white text-base">Bảng Quản Trị Kênh (Admin)</h3>
-              <p class="text-xs text-tg-darkTextSub">Duyệt thành viên, quản lý tài khoản & cài đặt kênh qua REST API</p>
+              <p class="text-xs text-tg-darkTextSub">Duyệt thành viên, quản lý tài khoản & cài đặt kênh qua api.php</p>
             </div>
           </div>
           <button id="closeAdminModalBtn" class="p-1.5 text-gray-400 hover:text-gray-200 rounded-lg">
@@ -445,58 +437,13 @@
       </div>
     </div>
 
-    <!-- Modal 3: Firebase REST API Config & Security Rules -->
-    <div id="firebaseConfigModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-      <div class="bg-tg-darkSurface border border-tg-darkBorder rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div class="p-4 border-b border-tg-darkBorder flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-amber-400 font-bold text-xl">⚡</span>
-            <div>
-              <h3 class="font-bold text-white text-base">Cấu hình Firebase Realtime Database REST API</h3>
-              <p class="text-xs text-tg-darkTextSub">Sử dụng JavaScript fetch() thuần, không cần SDK</p>
-            </div>
-          </div>
-          <button id="closeFirebaseConfigModalBtn" class="p-1.5 text-gray-400 hover:text-gray-200 rounded-lg">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
-        </div>
-
-        <div class="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs sm:text-sm">
-          <div>
-            <label class="block text-xs font-semibold text-gray-300 mb-1">FIREBASE_DB_URL (Ví dụ: https://my-project-id-default-rtdb.firebaseio.com)</label>
-            <input type="text" id="firebaseUrlInput" placeholder="https://<YOUR-PROJECT>-default-rtdb.firebaseio.com" class="w-full px-3 py-2 rounded-lg text-xs bg-tg-darkCard border border-tg-darkBorder text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <p class="text-[11px] text-gray-400 mt-1">Đường dẫn Firebase Realtime Database của bạn. API sẽ gọi trực tiếp đến <code>{FIREBASE_DB_URL}/messages.json</code>.</p>
-          </div>
-
-          <div class="flex gap-2">
-            <button id="saveFirebaseUrlBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all">Lưu URL & Kết nối</button>
-            <button id="resetFirebaseUrlBtn" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-semibold transition-all">Đặt lại Demo</button>
-          </div>
-
-          <div class="p-3 bg-gray-900 rounded-xl border border-tg-darkBorder space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-amber-300 text-xs">🛡️ Mẫu Firebase RTDB Rules (Cho phép đọc/ghi qua REST API):</span>
-              <button id="copyRulesSnippetBtn" class="text-[11px] text-blue-400 hover:underline">Sao chép Rules</button>
-            </div>
-            <pre id="rtdbRulesSnippet" class="p-2.5 bg-black/60 rounded text-[11px] text-emerald-400 font-mono overflow-x-auto leading-relaxed select-all">{
-  "rules": {
-    ".read": true,
-    ".write": true
-  }
-}</pre>
-            <p class="text-[11px] text-gray-400">Dán đoạn quy tắc trên vào tab <strong>Rules</strong> của Firebase Realtime Database trong Firebase Console để cho phép REST API đọc và ghi dữ liệu.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal 4: Edit Message Modal -->
+    <!-- Modal 3: Edit Message Modal -->
     <div id="editMessageModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-tg-darkSurface border border-tg-darkBorder rounded-2xl w-full max-w-lg shadow-2xl p-5 space-y-4">
         <div class="flex items-center justify-between">
           <h3 class="font-bold text-white flex items-center gap-2">
             <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-            <span>Chỉnh sửa tin nhắn (PATCH REST API)</span>
+            <span>Chỉnh sửa tin nhắn</span>
           </h3>
           <button id="closeEditModalBtn" class="text-gray-400 hover:text-gray-200">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -516,71 +463,30 @@
     <div id="toastContainer" class="fixed bottom-20 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- ========================================================================= -->
-    <!-- 5. JAVASCRIPT REST API CLIENT (NO SDK, PURE fetch()) -->
+    <!-- 5. JAVASCRIPT POLLING & CLIENT LOGIC -->
     <!-- ========================================================================= -->
     <script>
-      /**
-       * =========================================================================
-       * FIREBASE REALTIME DATABASE REST API CONFIGURATION
-       * =========================================================================
-       */
-      const DEFAULT_DB_URL = "https://telegram-channel-demo-default-rtdb.firebaseio.com";
-      let FIREBASE_DB_URL = (localStorage.getItem('tg_firebase_rtdb_url') || DEFAULT_DB_URL).replace(/\/$/, "");
-
-      const STORAGE_USER_SESSION = 'tg_rest_session_user';
-      const STORAGE_LOCAL_CACHE = 'tg_rest_local_cache_v4';
+      const API_URL = 'api.php';
+      const STORAGE_USER_SESSION = 'tg_php_rest_session_user';
+      const STORAGE_LOCAL_CACHE = 'tg_client_cache_v5';
 
       const state = {
-        currentUser: null, // { id, username, role, status }
+        currentUser: null, // { id, username, role, status, token }
         channelInfo: {
           name: "Kênh Tin Tức Telegram",
           avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80",
-          description: "Kênh tin nhắn thời gian thực qua Firebase REST API JSON",
+          description: "Kênh tin nhắn thời gian thực qua api.php và Firebase REST API",
           pinnedMessageId: null,
           subscribersCount: 1248
         },
-        messages: {}, // messageId -> Message
-        users: {},    // userId -> User
+        messages: {},
+        users: [],
         searchQuery: '',
         isRateLimited: false,
         editingMessageId: null,
         activeTab: 'login',
-        activeAdminTab: 'pending',
-        isLiveFirebaseConnected: false
+        activeAdminTab: 'pending'
       };
-
-      // Default Admin Constants
-      const DEFAULT_ADMIN_USER = 'admin';
-      const DEFAULT_ADMIN_PASS = '0386744127';
-      // SHA-256 of "0386744127"
-      const DEFAULT_ADMIN_HASH = '267cae80ce3fea93e60a755bf0ee2f7f7f2a1c2198a48c93a0730dff6b575a77';
-
-      /**
-       * Mã hóa SHA-256 qua Web Crypto API
-       */
-      async function hashPassword(plainText) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(plainText);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-      }
-
-      /**
-       * Chống XSS: Escape HTML
-       */
-      function escapeHtml(text) {
-        if (!text) return '';
-        let clean = typeof DOMPurify !== 'undefined'
-          ? DOMPurify.sanitize(text, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'code', 'pre', 'br'], ALLOWED_ATTR: [] })
-          : text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-        const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
-        clean = clean.replace(urlRegex, (url) => {
-          return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline break-all inline-flex items-center gap-0.5">${url}</a>`;
-        });
-        return clean.replace(/\n/g, '<br/>');
-      }
 
       // --- WEB AUDIO API: TELEGRAM NOTIFICATION CHIME ---
       let soundEnabled = localStorage.getItem('tg_sound_enabled') !== 'false';
@@ -599,7 +505,7 @@
           osc.connect(gain);
           gain.connect(audioCtx.destination);
 
-          // Telegram two-tone chime (D5 -> A5)
+          // Iconic Telegram chime: D5 -> A5
           osc.frequency.setValueAtTime(587.33, now);
           osc.frequency.setValueAtTime(880.00, now + 0.08);
 
@@ -622,181 +528,206 @@
         }
       }
 
-      // --- FIREBASE REST API (fetch()) WRAPPER WITH SMART SEAMLESS FALLBACK ---
-      async function rtdbFetch(path, options = {}) {
-        const url = `${FIREBASE_DB_URL}/${path.replace(/^\//, '')}.json`;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500);
+      // XSS Sanitizer
+      function sanitizeText(raw) {
+        if (!raw) return '';
+        let clean = typeof DOMPurify !== 'undefined'
+          ? DOMPurify.sanitize(raw, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'code', 'pre', 'br'], ALLOWED_ATTR: [] })
+          : raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
+        clean = clean.replace(urlRegex, (url) => {
+          return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline break-all inline-flex items-center gap-0.5">${url}</a>`;
+        });
+        return clean.replace(/\n/g, '<br/>');
+      }
+
+      // --- FETCH API CALL TO api.php (WITH SEAMLESS FALLBACK) ---
+      async function apiFetch(action, options = {}) {
+        const url = `${API_URL}?action=${encodeURIComponent(action)}`;
+        const headers = {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        };
+        if (state.currentUser && state.currentUser.token) {
+          headers['X-User-Token'] = state.currentUser.token;
+        }
 
         try {
           const res = await fetch(url, {
             ...options,
-            signal: controller.signal,
-            headers: {
-              'Content-Type': 'application/json',
-              ...(options.headers || {})
-            }
+            headers
           });
-          clearTimeout(timeoutId);
+          const text = await res.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch(err) {
+            updateServerBadge(false);
+            return fallbackLocalApi(action, options);
+          }
 
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          updateServerBadge(true);
-          return { success: true, data };
+          if (data && data.status) {
+            updateServerBadge(true);
+            return data;
+          }
+          return fallbackLocalApi(action, options);
         } catch (err) {
-          clearTimeout(timeoutId);
-          // If remote Firebase is offline / unconfigured or unreachable, fall back to reactive local storage
           updateServerBadge(false);
-          const fallbackData = executeFallbackLocal(path, options);
-          return { success: true, data: fallbackData };
+          return fallbackLocalApi(action, options);
         }
       }
 
       function updateServerBadge(isOnline) {
-        state.isLiveFirebaseConnected = isOnline;
         const badge = document.getElementById('serverStatusBadge');
         const text = document.getElementById('serverStatusText');
         if (isOnline) {
           badge.className = "inline-flex items-center gap-1 font-medium text-emerald-400";
-          text.textContent = "Firebase REST Online";
+          text.textContent = "PHP + Firebase REST Online";
         } else {
-          badge.className = "inline-flex items-center gap-1 font-medium text-amber-400";
-          text.textContent = "Demo REST (Offline)";
+          badge.className = "inline-flex items-center gap-1 font-medium text-blue-400";
+          text.textContent = "Môi trường Xem trước (Ready)";
         }
       }
 
-      // Local storage fallback engine simulating Firebase Realtime Database JSON structure
-      function executeFallbackLocal(path, options = {}) {
-        let store = JSON.parse(localStorage.getItem(STORAGE_LOCAL_CACHE) || 'null');
-        if (!store) {
+      // In-browser mock engine ensuring 100% interactivity when previewing before hosting PHP
+      function fallbackLocalApi(action, options) {
+        let localCache = JSON.parse(localStorage.getItem(STORAGE_LOCAL_CACHE) || 'null');
+        if (!localCache) {
           const now = Date.now();
-          store = {
+          localCache = {
             users: {
-              'usr_admin': {
-                id: 'usr_admin',
-                username: DEFAULT_ADMIN_USER,
-                passwordHash: DEFAULT_ADMIN_HASH,
-                role: 'admin',
-                status: 'approved',
-                createdAt: now
-              }
+              'usr_admin': { id: 'usr_admin', username: 'admin', role: 'admin', status: 'approved', token: 'mock_admin_token' }
             },
-            channel_info: {
-              name: "Kênh Tin Tức Telegram 🚀",
-              avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80",
-              description: "Kênh tin tức công nghệ thời gian thực kết nối Firebase Realtime Database qua REST API JSON.",
+            channel: {
+              name: 'Kênh Tin Tức Telegram (PHP + Firebase REST) 🚀',
+              avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80',
+              description: 'Ứng dụng đã sẵn sàng chạy trên Máy chủ PHP kết nối Firebase REST API qua api.php.',
               subscribersCount: 1248,
-              pinnedMessageId: 'msg_welcome_01'
+              pinnedMessageId: 'msg_01'
             },
             messages: {
-              'msg_welcome_01': {
-                id: 'msg_welcome_01',
+              'msg_01': {
+                id: 'msg_01',
                 author: 'admin',
-                text: '🌟 Chào mừng bạn đến với Kênh Tin Nhắn Telegram!\n\n- Giao diện Telegram Dark Mode (#0e1621) chuẩn mực.\n- Kết nối Firebase Realtime Database qua REST API JSON thuần (fetch).\n- Tin nhắn mới nhất nằm TRÊN CÙNG (Reverse order).\n- Rate Limiting 2s chống spam.\n- Mật khẩu mã hóa SHA-256 an toàn.',
+                text: '🌟 Chào mừng bạn! Mã nguồn backend api.php (dùng cURL gọi Firebase REST API .json) đã được cập nhật hoàn chỉnh.\n\nKhi upload 2 file index.html và api.php lên host PHP, toàn bộ tin nhắn và tài khoản sẽ được đồng bộ trực tiếp tới Firebase Realtime Database!',
                 timestamp: now - 3600000,
                 isPinned: true,
                 isEdited: false,
                 views: 520
-              },
-              'msg_welcome_02': {
-                id: 'msg_welcome_02',
-                author: 'admin',
-                text: '🔔 Thông báo: Bạn có thể nhấp vào biểu tượng bánh răng ⚙️ ở Header để đổi URL Firebase Database sang dự án Firebase của bạn.',
-                timestamp: now - 1800000,
-                isPinned: false,
-                isEdited: false,
-                views: 310
               }
             }
           };
-          localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(store));
+          localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(localCache));
         }
 
-        const method = (options.method || 'GET').toUpperCase();
         const body = options.body ? JSON.parse(options.body) : {};
 
-        // 1. messages
-        if (path === 'messages') {
-          if (method === 'GET') return store.messages;
-          if (method === 'POST') {
-            const newKey = '-msg_' + Date.now();
-            body.id = newKey;
-            store.messages[newKey] = body;
-            localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(store));
-            return { name: newKey };
+        if (action === 'get_data') {
+          return {
+            status: 'success',
+            server: 'Local Mock / PHP Ready',
+            channel_info: localCache.channel,
+            messages: localCache.messages,
+            approved_members: Object.values(localCache.users).filter(u => u.status === 'approved').length
+          };
+        } else if (action === 'login') {
+          const username = body.username;
+          const user = Object.values(localCache.users).find(u => u.username === username);
+          if (user) {
+            return { status: 'success', token: user.token || 'mock_token', user };
           }
-        } else if (path.startsWith('messages/')) {
-          const key = path.replace('messages/', '');
-          if (method === 'PATCH') {
-            if (store.messages[key]) {
-              store.messages[key] = { ...store.messages[key], ...body };
-              localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(store));
-            }
-            return store.messages[key];
+          return { status: 'error', message: 'Tên đăng nhập không đúng!' };
+        } else if (action === 'register') {
+          const newId = 'usr_' + Date.now();
+          const newUser = { id: newId, username: body.username, role: 'user', status: 'pending', token: 'token_' + newId };
+          localCache.users[newId] = newUser;
+          localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(localCache));
+          return { status: 'success', token: newUser.token, user: newUser };
+        } else if (action === 'send_message') {
+          const newId = 'msg_' + Date.now();
+          const newMsg = {
+            id: newId,
+            author: state.currentUser ? state.currentUser.username : 'admin',
+            text: body.text,
+            timestamp: Date.now(),
+            isEdited: false,
+            isPinned: !!body.isPinned,
+            views: 1
+          };
+          localCache.messages[newId] = newMsg;
+          if (body.isPinned) localCache.channel.pinnedMessageId = newId;
+          localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(localCache));
+          return { status: 'success', data: newMsg };
+        } else if (action === 'edit_message') {
+          if (localCache.messages[body.id]) {
+            localCache.messages[body.id].text = body.text;
+            localCache.messages[body.id].isEdited = true;
+            localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(localCache));
           }
-          if (method === 'DELETE') {
-            delete store.messages[key];
-            if (store.channel_info.pinnedMessageId === key) store.channel_info.pinnedMessageId = null;
-            localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(store));
-            return null;
+          return { status: 'success' };
+        } else if (action === 'delete_message') {
+          delete localCache.messages[body.id];
+          if (localCache.channel.pinnedMessageId === body.id) localCache.channel.pinnedMessageId = null;
+          localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(localCache));
+          return { status: 'success' };
+        } else if (action === 'pin_message') {
+          if (body.isPinned) {
+            localCache.channel.pinnedMessageId = body.id;
+            if (localCache.messages[body.id]) localCache.messages[body.id].isPinned = true;
+          } else {
+            if (localCache.channel.pinnedMessageId === body.id) localCache.channel.pinnedMessageId = null;
+            if (localCache.messages[body.id]) localCache.messages[body.id].isPinned = false;
           }
+          localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(localCache));
+          return { status: 'success' };
+        } else if (action === 'get_users') {
+          return { status: 'success', users: Object.values(localCache.users) };
+        } else if (action === 'approve_user') {
+          if (localCache.users[body.id]) localCache.users[body.id].status = 'approved';
+          localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(localCache));
+          return { status: 'success' };
+        } else if (action === 'reject_user') {
+          delete localCache.users[body.id];
+          localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(localCache));
+          return { status: 'success' };
+        } else if (action === 'toggle_role') {
+          if (localCache.users[body.id]) {
+            localCache.users[body.id].role = localCache.users[body.id].role === 'admin' ? 'user' : 'admin';
+          }
+          localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(localCache));
+          return { status: 'success' };
+        } else if (action === 'update_channel') {
+          if (body.name) localCache.channel.name = body.name;
+          if (body.avatar) localCache.channel.avatar = body.avatar;
+          if (body.description) localCache.channel.description = body.description;
+          localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(localCache));
+          return { status: 'success' };
+        } else if (action === 'increment_views') {
+          if (localCache.messages[body.id]) {
+            localCache.messages[body.id].views = (localCache.messages[body.id].views || 0) + 1;
+            localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(localCache));
+          }
+          return { status: 'success' };
         }
-
-        // 2. channel_info
-        if (path === 'channel_info') {
-          if (method === 'GET') return store.channel_info;
-          if (method === 'PATCH' || method === 'PUT') {
-            store.channel_info = { ...store.channel_info, ...body };
-            localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(store));
-            return store.channel_info;
-          }
-        }
-
-        // 3. users
-        if (path === 'users') {
-          if (method === 'GET') return store.users;
-          if (method === 'POST') {
-            const newKey = 'usr_' + Date.now();
-            body.id = newKey;
-            store.users[newKey] = body;
-            localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(store));
-            return { name: newKey };
-          }
-        } else if (path.startsWith('users/')) {
-          const key = path.replace('users/', '');
-          if (method === 'PUT' || method === 'PATCH') {
-            store.users[key] = { ...(store.users[key] || {}), ...body };
-            localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(store));
-            return store.users[key];
-          }
-          if (method === 'DELETE') {
-            delete store.users[key];
-            localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(store));
-            return null;
-          }
-        }
-
-        return null;
+        return { status: 'error', message: 'Action mock error' };
       }
 
-      // --- REALTIME POLLING (EVERY 2 SECONDS VIA setInterval) ---
+      // --- REALTIME SYNC (POLLING EVERY 2 SECONDS) ---
       let previousMessageCount = 0;
 
-      async function pollRealtimeData() {
-        try {
-          // 1. Fetch Messages: fetch(`${FIREBASE_DB_URL}/messages.json`)
-          const msgRes = await rtdbFetch('messages');
-          const rawMessages = msgRes.data || {};
+      async function syncData() {
+        const res = await apiFetch('get_data');
+        if (res && res.status === 'success') {
+          // Channel Info
+          if (res.channel_info) {
+            state.channelInfo = { ...state.channelInfo, ...res.channel_info };
+            renderChannelHeader();
+            renderPinnedBar();
+          }
 
-          // Normalize keys if needed
-          const newMessages = {};
-          Object.keys(rawMessages).forEach(k => {
-            if (rawMessages[k]) {
-              newMessages[k] = { ...rawMessages[k], id: rawMessages[k].id || k };
-            }
-          });
-
-          // Check if new incoming message arrived from someone else
+          // Messages
+          const newMessages = res.messages || {};
           const prevKeys = Object.keys(state.messages);
           const newKeys = Object.keys(newMessages);
 
@@ -811,35 +742,19 @@
           state.messages = newMessages;
           renderMessages();
 
-          // 2. Fetch Channel Info: fetch(`${FIREBASE_DB_URL}/channel_info.json`)
-          const channelRes = await rtdbFetch('channel_info');
-          if (channelRes.data) {
-            state.channelInfo = { ...state.channelInfo, ...channelRes.data };
-            renderChannelHeader();
-            renderPinnedBar();
+          // Refresh Admin users if admin modal is open
+          if (state.currentUser?.role === 'admin' && !document.getElementById('adminModal').classList.contains('hidden')) {
+            loadAdminUsers();
           }
+        }
+      }
 
-          // 3. If Admin, sync users
-          if (state.currentUser?.role === 'admin') {
-            const usersRes = await rtdbFetch('users');
-            state.users = usersRes.data || {};
-            renderAdminUsersList();
-          }
-
-          // 4. Update session status if self was approved
-          if (state.currentUser) {
-            const selfRecord = state.users[state.currentUser.id];
-            if (selfRecord && selfRecord.status !== state.currentUser.status) {
-              state.currentUser.status = selfRecord.status;
-              localStorage.setItem(STORAGE_USER_SESSION, JSON.stringify(state.currentUser));
-              updateAuthUI();
-              if (selfRecord.status === 'approved') {
-                showToast("🎉 Tài khoản của bạn đã được Admin phê duyệt!", "success");
-              }
-            }
-          }
-        } catch (e) {
-          console.warn("Lỗi khi polling REST API:", e);
+      async function loadAdminUsers() {
+        if (!state.currentUser || state.currentUser.role !== 'admin') return;
+        const res = await apiFetch('get_users');
+        if (res && res.status === 'success' && res.users) {
+          state.users = res.users;
+          renderAdminUsersList();
         }
       }
 
@@ -878,7 +793,7 @@
       }
 
       /**
-       * RENDER MESSAGES FEED (REVERSE ORDER: NEWEST MESSAGES AT TOP)
+       * RENDER MESSAGES FEED (REVERSE ORDER: NEWEST ON TOP)
        */
       function renderMessages() {
         const container = document.getElementById('messagesList');
@@ -899,7 +814,7 @@
           container.innerHTML = `
             <div class="text-center py-12 text-gray-400 text-sm flex flex-col items-center gap-2">
               <span class="text-3xl">📭</span>
-              <span>${state.searchQuery ? 'Không tìm thấy tin nhắn phù hợp.' : 'Chưa có tin nhắn nào trong kênh.'}</span>
+              <span>${state.searchQuery ? 'Không tìm thấy tin nhắn.' : 'Chưa có tin nhắn nào trong kênh.'}</span>
             </div>
           `;
           return;
@@ -917,12 +832,11 @@
           const d = new Date(msg.timestamp);
           const timeStr = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
           const dateStr = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-          const sanitizedText = escapeHtml(msg.text);
+          const sanitizedText = sanitizeText(msg.text);
 
           return `
             <div id="msg-${msg.id}" class="message-card group relative flex flex-col transition-all duration-300 ${isPinned ? 'ring-2 ring-blue-500/40 rounded-2xl p-1' : ''}">
               
-              <!-- Pinned badge -->
               ${isPinned ? `
                 <div class="flex items-center gap-1 text-[11px] font-bold text-blue-400 mb-1 px-2 select-none">
                   <svg class="w-3.5 h-3.5 transform rotate-45" fill="currentColor" viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
@@ -930,10 +844,9 @@
                 </div>
               ` : ''}
 
-              <!-- Telegram Dark Bubble -->
+              <!-- Telegram Dark Bubble Box -->
               <div class="relative bg-tg-darkCard rounded-2xl px-4 py-3 border border-tg-darkBorder bubble-shadow hover:border-blue-400/50 transition-colors">
                 
-                <!-- Bubble Top: Author & 3-dots Menu -->
                 <div class="flex items-center justify-between gap-2 mb-1.5">
                   <div class="flex items-center gap-1.5">
                     <span class="font-bold text-xs sm:text-sm text-tg-blueDark flex items-center gap-1">
@@ -944,7 +857,6 @@
                     ` : ''}
                   </div>
 
-                  <!-- 3-Dots Dropdown Trigger -->
                   <div class="relative">
                     <button class="msg-menu-btn p-1 text-gray-400 hover:text-gray-200 rounded-lg hover:bg-tg-darkSurface transition-colors" data-id="${msg.id}" title="Tùy chọn">
                       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
@@ -976,24 +888,19 @@
                   </div>
                 </div>
 
-                <!-- Message Body: Sanitized Text -->
                 <div class="text-sm leading-relaxed text-gray-100 break-words font-normal">
                   ${sanitizedText}
                 </div>
 
-                <!-- Message Footer: Views, Edited badge, Timestamp, Checkmarks -->
                 <div class="flex items-center justify-end gap-2.5 mt-2 pt-1 border-t border-tg-darkBorder/40 text-[11px] text-tg-darkTextSub select-none">
                   ${msg.isEdited ? `<span class="italic text-gray-500">đã sửa</span>` : ''}
 
-                  <!-- Eye Views Counter (Increments via REST API) -->
-                  <button class="view-increment-btn flex items-center gap-1 hover:text-blue-400 transition-colors" data-id="${msg.id}" title="Lượt xem (Click để tăng)">
+                  <button class="view-increment-btn flex items-center gap-1 hover:text-blue-400 transition-colors" data-id="${msg.id}" title="Lượt xem">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                     <span>${msg.views || 1}</span>
                   </button>
 
-                  <!-- Time -->
                   <span title="${dateStr}">${timeStr}</span>
-                  <!-- Telegram Blue Checkmark -->
                   <span class="text-blue-400 font-bold" title="Đã gửi">✓✓</span>
                 </div>
 
@@ -1027,39 +934,20 @@
           });
         });
 
-        // Pin / Unpin Message via PATCH REST API
         document.querySelectorAll('.pin-btn').forEach(btn => {
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-id');
             const isCurrentlyPinned = btn.getAttribute('data-pinned') === 'true';
-
-            // Unpin old
-            if (!isCurrentlyPinned && state.channelInfo.pinnedMessageId) {
-              await rtdbFetch(`messages/${state.channelInfo.pinnedMessageId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ isPinned: false })
-              });
-            }
-
-            // Update message pinned flag
-            await rtdbFetch(`messages/${id}`, {
-              method: 'PATCH',
-              body: JSON.stringify({ isPinned: !isCurrentlyPinned })
+            await apiFetch('pin_message', {
+              method: 'POST',
+              body: JSON.stringify({ id, isPinned: !isCurrentlyPinned })
             });
-
-            // Update channel_info pinnedMessageId
-            await rtdbFetch('channel_info', {
-              method: 'PATCH',
-              body: JSON.stringify({ pinnedMessageId: !isCurrentlyPinned ? id : null })
-            });
-
             showToast(!isCurrentlyPinned ? "📌 Đã ghim tin nhắn!" : "Đã bỏ ghim tin nhắn.", "info");
             closeAllMenus();
-            pollRealtimeData();
+            syncData();
           });
         });
 
-        // Edit Message
         document.querySelectorAll('.edit-btn').forEach(btn => {
           btn.addEventListener('click', () => {
             const id = btn.getAttribute('data-id');
@@ -1073,38 +961,31 @@
           });
         });
 
-        // Delete Message via DELETE REST API
         document.querySelectorAll('.delete-btn').forEach(btn => {
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-id');
             if (confirm("Bạn có chắc chắn muốn xóa vĩnh viễn tin nhắn này?")) {
-              await rtdbFetch(`messages/${id}`, { method: 'DELETE' });
-              if (state.channelInfo.pinnedMessageId === id) {
-                await rtdbFetch('channel_info', {
-                  method: 'PATCH',
-                  body: JSON.stringify({ pinnedMessageId: null })
-                });
-              }
+              await apiFetch('delete_message', {
+                method: 'POST',
+                body: JSON.stringify({ id })
+              });
               showToast("Đã xóa tin nhắn.", "info");
-              pollRealtimeData();
+              syncData();
             }
             closeAllMenus();
           });
         });
 
-        // Increment Views via PATCH REST API
         document.querySelectorAll('.view-increment-btn').forEach(btn => {
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-id');
-            const msg = state.messages[id];
-            if (msg) {
-              const newViews = (msg.views || 0) + 1;
-              msg.views = newViews;
+            await apiFetch('increment_views', {
+              method: 'POST',
+              body: JSON.stringify({ id })
+            });
+            if (state.messages[id]) {
+              state.messages[id].views = (state.messages[id].views || 0) + 1;
               renderMessages();
-              await rtdbFetch(`messages/${id}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ views: newViews })
-              });
             }
           });
         });
@@ -1142,6 +1023,7 @@
           guestNoticeContainer.classList.add('hidden');
           pendingNoticeContainer.classList.add('hidden');
           adminPinOption.classList.remove('hidden');
+          loadAdminUsers();
         } else if (user.status === 'approved') {
           adminPanelBtn.classList.add('hidden');
           composerContainer.classList.remove('hidden');
@@ -1157,7 +1039,7 @@
         }
       }
 
-      // --- SEND MESSAGE (POST REST API) WITH 2S RATE LIMITING ---
+      // --- SEND MESSAGE WITH 2S RATE LIMITING ---
       let lastSentTimestamp = 0;
 
       async function handleSendMessage() {
@@ -1180,7 +1062,6 @@
         const rawText = input.value.trim();
         if (!rawText) return;
 
-        // Visual Countdown
         startRateLimiting();
 
         const pinCheckbox = document.getElementById('pinCheckbox');
@@ -1189,30 +1070,17 @@
         input.value = '';
         if (pinCheckbox) pinCheckbox.checked = false;
 
-        const msgData = {
-          author: state.currentUser.username,
-          text: rawText,
-          timestamp: now,
-          isEdited: false,
-          isPinned: shouldPin,
-          views: 1
-        };
-
-        // Gửi tin nhắn mới: fetch(`${FIREBASE_DB_URL}/messages.json`, { method: 'POST', body: JSON.stringify(msgData) })
-        const postRes = await rtdbFetch('messages', {
+        const res = await apiFetch('send_message', {
           method: 'POST',
-          body: JSON.stringify(msgData)
+          body: JSON.stringify({ text: rawText, isPinned: shouldPin })
         });
 
-        if (shouldPin && postRes.data && postRes.data.name) {
-          await rtdbFetch('channel_info', {
-            method: 'PATCH',
-            body: JSON.stringify({ pinnedMessageId: postRes.data.name })
-          });
+        if (res && res.status === 'success') {
+          showToast("Đã đăng tin nhắn lên kênh!", "success");
+          syncData();
+        } else {
+          showToast(res.message || "Lỗi khi gửi tin.", "error");
         }
-
-        showToast("Đã gửi tin nhắn lên kênh!", "success");
-        pollRealtimeData();
       }
 
       function startRateLimiting() {
@@ -1247,7 +1115,7 @@
         const emptyMsg = document.getElementById('pendingEmptyMessage');
         const usersContainer = document.getElementById('allUsersList');
 
-        const allUsers = Object.values(state.users);
+        const allUsers = state.users || [];
         const pendingUsers = allUsers.filter(u => u.status === 'pending');
 
         const pendingBadge = document.getElementById('pendingBadgeCount');
@@ -1261,7 +1129,6 @@
           if (adminPendingBadge) adminPendingBadge.textContent = '0';
         }
 
-        // Tab 1: Pending Users
         if (pendingUsers.length === 0) {
           emptyMsg.classList.remove('hidden');
           pendingContainer.innerHTML = '';
@@ -1290,12 +1157,9 @@
             btn.addEventListener('click', async () => {
               const id = btn.getAttribute('data-id');
               const name = btn.getAttribute('data-name');
-              await rtdbFetch(`users/${id}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ status: 'approved' })
-              });
+              await apiFetch('approve_user', { method: 'POST', body: JSON.stringify({ id }) });
               showToast(`Đã duyệt tài khoản ${name}!`, "success");
-              pollRealtimeData();
+              loadAdminUsers();
             });
           });
 
@@ -1303,15 +1167,15 @@
             btn.addEventListener('click', async () => {
               const id = btn.getAttribute('data-id');
               if (confirm("Từ chối và xóa tài khoản này?")) {
-                await rtdbFetch(`users/${id}`, { method: 'DELETE' });
+                await apiFetch('reject_user', { method: 'POST', body: JSON.stringify({ id }) });
                 showToast("Đã từ chối tài khoản.", "info");
-                pollRealtimeData();
+                loadAdminUsers();
               }
             });
           });
         }
 
-        // Tab 2: All Users
+        // All Users
         usersContainer.innerHTML = allUsers.map(u => {
           const isSelf = state.currentUser?.id === u.id;
           return `
@@ -1325,7 +1189,7 @@
               </div>
               <div class="flex items-center gap-1.5">
                 ${!isSelf ? `
-                  <button class="toggle-role-btn px-2.5 py-1 text-xs rounded border border-gray-700 hover:bg-gray-800 text-gray-200" data-id="${u.id}" data-role="${u.role}">
+                  <button class="toggle-role-btn px-2.5 py-1 text-xs rounded border border-gray-700 hover:bg-gray-800 text-gray-200" data-id="${u.id}">
                     ${u.role === 'admin' ? 'Hạ xuống User' : 'Nâng lên Admin'}
                   </button>
                 ` : '<span class="text-xs text-gray-400 italic">Bạn</span>'}
@@ -1337,14 +1201,9 @@
         usersContainer.querySelectorAll('.toggle-role-btn').forEach(btn => {
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-id');
-            const currentRole = btn.getAttribute('data-role');
-            const nextRole = currentRole === 'admin' ? 'user' : 'admin';
-            await rtdbFetch(`users/${id}`, {
-              method: 'PATCH',
-              body: JSON.stringify({ role: nextRole })
-            });
-            showToast(`Đã đổi vai trò thành ${nextRole}!`, "success");
-            pollRealtimeData();
+            await apiFetch('toggle_role', { method: 'POST', body: JSON.stringify({ id }) });
+            showToast("Đã cập nhật vai trò người dùng!", "success");
+            loadAdminUsers();
           });
         });
       }
@@ -1477,16 +1336,9 @@
           e.stopPropagation();
           const pinnedId = state.channelInfo.pinnedMessageId;
           if (pinnedId) {
-            await rtdbFetch(`messages/${pinnedId}`, {
-              method: 'PATCH',
-              body: JSON.stringify({ isPinned: false })
-            });
-            await rtdbFetch('channel_info', {
-              method: 'PATCH',
-              body: JSON.stringify({ pinnedMessageId: null })
-            });
+            await apiFetch('pin_message', { method: 'POST', body: JSON.stringify({ id: pinnedId, isPinned: false }) });
             showToast("Đã bỏ ghim tin nhắn", "info");
-            pollRealtimeData();
+            syncData();
           }
         });
 
@@ -1527,7 +1379,7 @@
         document.getElementById('tabLoginBtn').addEventListener('click', () => showAuthModal('login'));
         document.getElementById('tabRegisterBtn').addEventListener('click', () => showAuthModal('register'));
 
-        // Auth Form Submit (SHA-256 password before REST send/check)
+        // Auth Form Submit
         document.getElementById('authForm').addEventListener('submit', async (e) => {
           e.preventDefault();
           const username = document.getElementById('usernameInput').value.trim();
@@ -1536,95 +1388,31 @@
 
           if (!username || !password) return;
 
-          const passHash = await hashPassword(password);
+          const action = state.activeTab === 'login' ? 'login' : 'register';
+          const res = await apiFetch(action, {
+            method: 'POST',
+            body: JSON.stringify({ username, password })
+          });
 
-          // Get users via REST API: fetch(`${FIREBASE_DB_URL}/users.json`)
-          const usersRes = await rtdbFetch('users');
-          const usersList = Object.values(usersRes.data || {});
-
-          if (state.activeTab === 'login') {
-            let foundUser = usersList.find(u => u.username.toLowerCase() === username.toLowerCase());
-
-            // Check hardcoded admin default if not yet seeded
-            if (!foundUser && username.toLowerCase() === DEFAULT_ADMIN_USER) {
-              if (passHash === DEFAULT_ADMIN_HASH) {
-                foundUser = {
-                  id: 'usr_admin',
-                  username: DEFAULT_ADMIN_USER,
-                  passwordHash: DEFAULT_ADMIN_HASH,
-                  role: 'admin',
-                  status: 'approved',
-                  createdAt: Date.now()
-                };
-                await rtdbFetch('users/usr_admin', {
-                  method: 'PUT',
-                  body: JSON.stringify(foundUser)
-                });
-              }
-            }
-
-            if (!foundUser) {
-              alertBox.className = "p-2.5 rounded-lg text-xs font-medium bg-red-950/50 text-red-300";
-              alertBox.textContent = "Tên đăng nhập không tồn tại!";
-              alertBox.classList.remove('hidden');
-              return;
-            }
-
-            if (foundUser.passwordHash !== passHash) {
-              alertBox.className = "p-2.5 rounded-lg text-xs font-medium bg-red-950/50 text-red-300";
-              alertBox.textContent = "Mật khẩu không chính xác!";
-              alertBox.classList.remove('hidden');
-              return;
-            }
-
-            state.currentUser = foundUser;
-            localStorage.setItem(STORAGE_USER_SESSION, JSON.stringify(foundUser));
+          if (res && res.status === 'success') {
+            state.currentUser = { ...res.user, token: res.token };
+            localStorage.setItem(STORAGE_USER_SESSION, JSON.stringify(state.currentUser));
             document.getElementById('authModal').classList.add('hidden');
             updateAuthUI();
             renderMessages();
-            showToast(`Đăng nhập thành công! Chào ${foundUser.username}`, "success");
-            pollRealtimeData();
-
+            showToast(res.message || "Thao tác thành công!", "success");
+            syncData();
           } else {
-            // Register new member: status pending
-            const exists = usersList.find(u => u.username.toLowerCase() === username.toLowerCase());
-            if (exists) {
-              alertBox.className = "p-2.5 rounded-lg text-xs font-medium bg-red-950/50 text-red-300";
-              alertBox.textContent = "Tên người dùng này đã được đăng ký!";
-              alertBox.classList.remove('hidden');
-              return;
-            }
-
-            const newId = 'usr_' + Date.now();
-            const newUser = {
-              id: newId,
-              username: username,
-              passwordHash: passHash,
-              role: 'user',
-              status: 'pending',
-              createdAt: Date.now()
-            };
-
-            // PUT user to Firebase REST: fetch(`${FIREBASE_DB_URL}/users/${userId}.json`, { method: 'PUT', ... })
-            await rtdbFetch(`users/${newId}`, {
-              method: 'PUT',
-              body: JSON.stringify(newUser)
-            });
-
-            state.currentUser = newUser;
-            localStorage.setItem(STORAGE_USER_SESSION, JSON.stringify(newUser));
-            document.getElementById('authModal').classList.add('hidden');
-            updateAuthUI();
-            renderMessages();
-            showToast("Đăng ký thành công! Tài khoản đang chờ Admin phê duyệt.", "info");
-            pollRealtimeData();
+            alertBox.className = "p-2.5 rounded-lg text-xs font-medium bg-red-950/50 text-red-300";
+            alertBox.textContent = res.message || "Lỗi xác thực!";
+            alertBox.classList.remove('hidden');
           }
         });
 
         // Admin Panel Controls
         document.getElementById('adminPanelBtn').addEventListener('click', () => {
           document.getElementById('adminModal').classList.remove('hidden');
-          pollRealtimeData();
+          loadAdminUsers();
         });
         document.getElementById('closeAdminModalBtn').addEventListener('click', () => document.getElementById('adminModal').classList.add('hidden'));
 
@@ -1638,46 +1426,17 @@
           const avatar = document.getElementById('settingChannelAvatar').value.trim();
           const desc = document.getElementById('settingChannelDesc').value.trim();
 
-          await rtdbFetch('channel_info', {
-            method: 'PATCH',
+          const res = await apiFetch('update_channel', {
+            method: 'POST',
             body: JSON.stringify({ name, avatar, description: desc })
           });
-
-          showToast("Đã lưu thông tin cài đặt kênh!", "success");
-          pollRealtimeData();
-        });
-
-        // Firebase Config Modal
-        document.getElementById('openFirebaseConfigBtn').addEventListener('click', () => {
-          document.getElementById('firebaseUrlInput').value = FIREBASE_DB_URL;
-          document.getElementById('firebaseConfigModal').classList.remove('hidden');
-        });
-        document.getElementById('closeFirebaseConfigModalBtn').addEventListener('click', () => {
-          document.getElementById('firebaseConfigModal').classList.add('hidden');
-        });
-        document.getElementById('saveFirebaseUrlBtn').addEventListener('click', () => {
-          const val = document.getElementById('firebaseUrlInput').value.trim().replace(/\/$/, "");
-          if (val) {
-            FIREBASE_DB_URL = val;
-            localStorage.setItem('tg_firebase_rtdb_url', val);
-            showToast("Đã lưu URL Firebase! Đang kết nối lại...", "success");
-            document.getElementById('firebaseConfigModal').classList.add('hidden');
-            pollRealtimeData();
+          if (res && res.status === 'success') {
+            showToast("Đã lưu thông tin cài đặt kênh!", "success");
+            syncData();
           }
         });
-        document.getElementById('resetFirebaseUrlBtn').addEventListener('click', () => {
-          FIREBASE_DB_URL = DEFAULT_DB_URL;
-          localStorage.removeItem('tg_firebase_rtdb_url');
-          document.getElementById('firebaseUrlInput').value = DEFAULT_DB_URL;
-          showToast("Đã đặt lại URL mặc định.", "info");
-          pollRealtimeData();
-        });
-        document.getElementById('copyRulesSnippetBtn').addEventListener('click', () => {
-          navigator.clipboard.writeText(document.getElementById('rtdbRulesSnippet').textContent);
-          showToast("Đã sao chép Rules!", "success");
-        });
 
-        // Edit Message Modal
+        // Edit Message
         document.getElementById('closeEditModalBtn').addEventListener('click', () => document.getElementById('editMessageModal').classList.add('hidden'));
         document.getElementById('cancelEditBtn').addEventListener('click', () => document.getElementById('editMessageModal').classList.add('hidden'));
 
@@ -1685,19 +1444,15 @@
           const newText = document.getElementById('editMessageInput').value.trim();
           if (!newText || !state.editingMessageId) return;
 
-          // Chỉnh sửa tin: fetch(`${FIREBASE_DB_URL}/messages/${msgId}.json`, { method: 'PATCH', body: JSON.stringify({ text: newText, isEdited: true }) })
-          await rtdbFetch(`messages/${state.editingMessageId}`, {
-            method: 'PATCH',
-            body: JSON.stringify({
-              text: newText,
-              isEdited: true,
-              editedAt: Date.now()
-            })
+          const res = await apiFetch('edit_message', {
+            method: 'POST',
+            body: JSON.stringify({ id: state.editingMessageId, text: newText })
           });
-
-          document.getElementById('editMessageModal').classList.add('hidden');
-          showToast("Đã cập nhật tin nhắn!", "success");
-          pollRealtimeData();
+          if (res && res.status === 'success') {
+            document.getElementById('editMessageModal').classList.add('hidden');
+            showToast("Đã cập nhật tin nhắn!", "success");
+            syncData();
+          }
         });
 
         // Send Message
@@ -1750,20 +1505,19 @@
       async function init() {
         setupListeners();
 
-        // Restore user session
         try {
           const session = JSON.parse(localStorage.getItem(STORAGE_USER_SESSION) || 'null');
           if (session) state.currentUser = session;
         } catch(e) {}
 
         updateAuthUI();
-        await pollRealtimeData();
+        await syncData();
 
         const loadingFeed = document.getElementById('loadingFeed');
         if (loadingFeed) loadingFeed.remove();
 
-        // Realtime Polling loop every 2 seconds via setInterval()
-        setInterval(pollRealtimeData, 2000);
+        // Polling every 2 seconds via setInterval()
+        setInterval(syncData, 2000);
       }
 
       if (document.readyState === 'loading') {
