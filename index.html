@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Telegram Channel - PHP & Firebase REST API</title>
-    <meta name="description" content="Ứng dụng Kênh tin nhắn Telegram thời gian thực kết nối backend PHP (api.php) qua Firebase Realtime Database REST API." />
-    <meta property="og:title" content="Telegram Channel - PHP & Firebase REST API" />
-    <meta property="og:description" content="Kênh tin nhắn Telegram thời gian thực kết nối backend PHP qua Firebase REST API." />
+    <title>Telegram Channel Web</title>
+    <meta name="description" content="Kênh tin nhắn Telegram thời gian thực với phân quyền Admin, mã hóa mật khẩu, chống XSS, Rate Limiting và Firebase Realtime Database." />
+    <meta property="og:title" content="Telegram Channel Web" />
+    <meta property="og:description" content="Kênh tin nhắn Telegram thời gian thực với phân quyền Admin, mã hóa mật khẩu, chống XSS, Rate Limiting và Firebase Realtime Database." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
 
@@ -23,7 +23,7 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif', 'Inter'],
+              sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Inter', 'Arial', 'sans-serif'],
             },
             colors: {
               tg: {
@@ -34,6 +34,13 @@
                 darkBorder: '#242f3d',
                 darkText: '#f5f5f5',
                 darkTextSub: '#708499',
+                lightBg: '#e6ebeef0',
+                lightSurface: '#ffffff',
+                lightCard: '#ffffff',
+                lightCardAccent: '#eff5fb',
+                lightBorder: '#dfe5ec',
+                lightText: '#1c242f',
+                lightTextSub: '#707579',
                 blue: '#3390ec',
                 blueHover: '#2b7ec9',
                 blueDark: '#5288c1',
@@ -46,14 +53,19 @@
       };
     </script>
 
-    <!-- DOMPurify CDN for XSS Sanitization -->
+    <!-- DOMPurify CDN for XSS Protection -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 
     <style>
-      /* Telegram Dark Mode Wallpaper Pattern */
-      .tg-chat-bg {
+      /* Telegram Wallpaper Pattern */
+      .tg-chat-bg-dark {
         background-color: #0e1621;
-        background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1.2px, transparent 1.2px);
+        background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1.2px, transparent 1.2px);
+        background-size: 24px 24px;
+      }
+      .tg-chat-bg-light {
+        background-color: #e6ebeef0;
+        background-image: radial-gradient(rgba(0, 0, 0, 0.04) 1.2px, transparent 1.2px);
         background-size: 24px 24px;
       }
 
@@ -73,40 +85,53 @@
         background: rgba(140, 150, 165, 0.55);
       }
 
-      .bubble-shadow {
+      .bubble-shadow-dark {
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+      }
+      .bubble-shadow-light {
+        box-shadow: 0 1px 2px rgba(16, 35, 47, 0.15);
       }
 
       @keyframes highlightPulse {
         0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(51, 144, 236, 0); }
-        50% { transform: scale(1.015); box-shadow: 0 0 0 5px rgba(51, 144, 236, 0.5); }
+        50% { transform: scale(1.012); box-shadow: 0 0 0 6px rgba(51, 144, 236, 0.5); }
       }
       .highlight-target {
-        animation: highlightPulse 1.8s ease-in-out;
+        animation: highlightPulse 2s ease-in-out;
+      }
+
+      /* Telegram Context Menu */
+      .context-menu-pop {
+        transform-origin: top right;
+        animation: menuScale 0.15s ease-out;
+      }
+      @keyframes menuScale {
+        from { opacity: 0; transform: scale(0.92); }
+        to { opacity: 1; transform: scale(1); }
       }
     </style>
   </head>
 
-  <body class="bg-tg-darkBg text-tg-darkText font-sans min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
+  <body class="bg-tg-darkBg text-tg-darkText font-sans min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white transition-colors duration-200">
 
-    <!-- ========================================== -->
-    <!-- 1. TELEGRAM HEADER (DARK MODE) -->
-    <!-- ========================================== -->
-    <header class="sticky top-0 z-40 bg-tg-darkSurface/95 backdrop-blur-md border-b border-tg-darkBorder shadow-sm">
-      <div class="max-w-4xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-3">
+    <!-- ============================================================== -->
+    <!-- 1. TELEGRAM HEADER (Channel Info, Search, Pin, User, Settings) -->
+    <!-- ============================================================== -->
+    <header class="sticky top-0 z-40 bg-tg-darkSurface/95 border-b border-tg-darkBorder shadow-sm transition-colors duration-200" id="mainHeader">
+      <div class="max-w-4xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2.5">
         
-        <!-- Left: Channel Avatar & Details -->
+        <!-- Left: Channel Avatar, Name, Subscribers Count -->
         <div class="flex items-center gap-3 min-w-0 cursor-pointer group" id="channelHeaderProfileBtn" title="Xem thông tin kênh">
           <div class="relative flex-shrink-0">
-            <img id="channelAvatar" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80" alt="Channel Avatar" class="w-11 h-11 rounded-full object-cover ring-2 ring-blue-500/30 group-hover:ring-blue-500 transition-all" />
+            <img id="channelAvatar" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80" alt="Channel Avatar" class="w-11 h-11 rounded-full object-cover ring-2 ring-blue-500/30 group-hover:ring-blue-500 transition-all shadow" />
             <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-tg-darkSurface rounded-full" title="Trực tuyến"></span>
           </div>
 
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <h1 id="channelName" class="font-bold text-sm sm:text-base text-white truncate">Kênh Tin Tức Telegram</h1>
-              <!-- Telegram Verified Star Badge -->
-              <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <!-- Telegram Star / Verified Badge -->
+              <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" title="Kênh chính thức đã xác minh">
                 <path d="M12 2l2.4 2.9 3.8-.4 1.2 3.6 3.4 1.7-1.1 3.6 1.7 3.4-3.1 2.2-.4 3.8-3.7.8L12 22l-4.2-1.4-3.7-.8-.4-3.8-3.1-2.2 1.7-3.4-1.1-3.6 3.4-1.7 1.2-3.6 3.8.4L12 2zm-1.2 13.6l6.4-6.4-1.4-1.4-5 5-2.2-2.2-1.4 1.4 3.6 3.6z"/>
               </svg>
             </div>
@@ -115,7 +140,7 @@
               <span>•</span>
               <span class="inline-flex items-center gap-1 font-medium text-emerald-400" id="serverStatusBadge">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span id="serverStatusText">api.php (2s Polling)</span>
+                <span id="serverStatusText">api.php (2s)</span>
               </span>
             </div>
           </div>
@@ -124,20 +149,39 @@
         <!-- Right: Action Buttons -->
         <div class="flex items-center gap-1 sm:gap-1.5">
           
-          <!-- Search Button -->
-          <button id="toggleSearchBtn" title="Tìm kiếm tin nhắn" class="p-2 rounded-full text-gray-300 hover:bg-tg-darkCard transition-colors">
+          <!-- View Pinned Message Button -->
+          <button id="viewPinnedHeaderBtn" title="Xem tin nhắn đã ghim" class="p-2 rounded-full text-gray-300 hover:bg-tg-darkCard hover:text-blue-400 transition-colors">
+            <svg class="w-5 h-5 transform rotate-45" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+            </svg>
+          </button>
+
+          <!-- Search Messages Toggle -->
+          <button id="toggleSearchBtn" title="Tìm kiếm tin nhắn" class="p-2 rounded-full text-gray-300 hover:bg-tg-darkCard hover:text-blue-400 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
           </button>
 
-          <!-- Notification Sound Button -->
-          <button id="toggleSoundBtn" title="Bật/Tắt âm thanh thông báo" class="p-2 rounded-full text-gray-300 hover:bg-tg-darkCard transition-colors">
+          <!-- Notification Sound Toggle -->
+          <button id="toggleSoundBtn" title="Bật/Tắt âm thanh thông báo" class="p-2 rounded-full text-gray-300 hover:bg-tg-darkCard hover:text-blue-400 transition-colors">
             <svg id="soundOnIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
             </svg>
             <svg id="soundOffIcon" class="w-5 h-5 hidden text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+            </svg>
+          </button>
+
+          <!-- Dark / Light Theme Toggle -->
+          <button id="toggleThemeBtn" title="Chuyển chế độ Sáng / Tối" class="p-2 rounded-full text-gray-300 hover:bg-tg-darkCard hover:text-amber-400 transition-colors">
+            <!-- Sun icon (shown in dark mode) -->
+            <svg id="themeSunIcon" class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <!-- Moon icon (shown in light mode) -->
+            <svg id="themeMoonIcon" class="w-5 h-5 hidden text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
           </button>
 
@@ -150,7 +194,7 @@
             <span id="pendingBadgeCount" class="hidden px-1.5 py-0.2 bg-red-500 text-white rounded-full text-[10px] font-bold">0</span>
           </button>
 
-          <!-- User Account / Login Button -->
+          <!-- User Session / Login Button -->
           <button id="authBtn" class="px-3 py-1.5 rounded-lg border border-tg-darkBorder bg-tg-darkCard text-xs font-semibold hover:border-blue-500 transition-colors flex items-center gap-1.5 text-gray-200">
             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -161,14 +205,14 @@
         </div>
       </div>
 
-      <!-- Quick Search Bar -->
+      <!-- Live Search Bar -->
       <div id="searchBarContainer" class="hidden border-t border-tg-darkBorder bg-tg-darkSurface/90 px-4 py-2.5 transition-all">
         <div class="max-w-4xl mx-auto flex items-center gap-2">
           <div class="relative flex-1">
             <svg class="w-4 h-4 absolute left-3 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-            <input type="text" id="searchInput" placeholder="Tìm kiếm tin nhắn trong kênh theo từ khóa..." class="w-full pl-9 pr-8 py-1.5 rounded-lg text-sm bg-tg-darkCard border border-tg-darkBorder focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100" />
+            <input type="text" id="searchInput" placeholder="Tìm kiếm tin nhắn trong kênh theo từ khóa..." class="w-full pl-9 pr-8 py-1.5 rounded-lg text-sm bg-tg-darkCard border border-tg-darkBorder focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400" />
             <button id="clearSearchBtn" class="hidden absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-200">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
@@ -202,11 +246,11 @@
       </div>
     </header>
 
-    <!-- ========================================== -->
-    <!-- 2. MAIN CHAT FEED (REVERSE ORDER) -->
-    <!-- ========================================== -->
-    <main class="flex-1 tg-chat-bg relative overflow-y-auto">
-      <div class="max-w-3xl mx-auto px-3 sm:px-4 py-6 flex flex-col min-h-full">
+    <!-- ============================================================== -->
+    <!-- 2. MAIN CHAT FEED (REVERSE ORDER: NEWEST ON TOP)               -->
+    <!-- ============================================================== -->
+    <main class="flex-1 tg-chat-bg-dark relative overflow-y-auto" id="mainContainer">
+      <div class="max-w-3xl mx-auto px-3 sm:px-4 py-5 flex flex-col min-h-full">
         
         <!-- Reverse Order Guide Pill -->
         <div class="flex justify-center mb-4 select-none">
@@ -214,7 +258,7 @@
             <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
             </svg>
-            <span>Tin nhắn MỚI NHẤT luôn hiển thị ở TRÊN CÙNG</span>
+            <span>Tin nhắn MỚI NHẤT hiển thị TRÊN CÙNG</span>
           </div>
         </div>
 
@@ -222,31 +266,31 @@
         <div id="messagesList" class="flex flex-col gap-3.5 flex-1">
           <div id="loadingFeed" class="text-center py-12 text-gray-400 text-sm flex flex-col items-center gap-2">
             <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <span>Đang tải dữ liệu từ api.php...</span>
+            <span>Đang tải tin nhắn từ api.php...</span>
           </div>
         </div>
 
       </div>
     </main>
 
-    <!-- ========================================== -->
-    <!-- 3. COMPOSER & STATUS FOOTER -->
-    <!-- ========================================== -->
-    <footer class="sticky bottom-0 z-30 bg-tg-darkSurface/95 backdrop-blur-md border-t border-tg-darkBorder">
+    <!-- ============================================================== -->
+    <!-- 3. COMPOSER BAR & ACCESS CONTROLS (STICKY FOOTER)             -->
+    <!-- ============================================================== -->
+    <footer class="sticky bottom-0 z-30 bg-tg-darkSurface/95 border-t border-tg-darkBorder" id="mainFooter">
       <div class="max-w-3xl mx-auto p-3 sm:p-4">
         
-        <!-- Case 1: Member/Admin Composer Form -->
+        <!-- Case 1: Member / Admin Composer Form -->
         <div id="composerContainer" class="hidden">
           
           <div class="flex items-center justify-between text-xs mb-2 px-1 text-tg-darkTextSub">
             <div id="adminPinOption" class="hidden flex items-center gap-2">
-              <label class="flex items-center gap-1.5 cursor-pointer text-gray-300 font-medium select-none">
+              <label class="flex items-center gap-1.5 cursor-pointer text-gray-300 font-medium select-none hover:text-blue-400 transition-colors">
                 <input type="checkbox" id="pinCheckbox" class="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 bg-tg-darkCard border-tg-darkBorder" />
-                <span>📌 Ghim tin nhắn này sau khi gửi</span>
+                <span>📌 Ghim tin nhắn này sau khi đăng</span>
               </label>
             </div>
 
-            <!-- Rate Limit Countdown Badge -->
+            <!-- Rate Limit Countdown Badge (2 seconds) -->
             <div id="rateLimitBadge" class="hidden ml-auto text-amber-400 font-semibold flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -257,7 +301,7 @@
           </div>
 
           <!-- Quick Emoji Toolbar -->
-          <div class="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1 text-base no-scrollbar select-none">
+          <div class="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1 text-base select-none">
             <span class="text-xs font-medium text-gray-400 mr-1">Cảm xúc:</span>
             <button type="button" class="emoji-btn hover:scale-125 transition-transform p-1">👍</button>
             <button type="button" class="emoji-btn hover:scale-125 transition-transform p-1">❤️</button>
@@ -274,7 +318,7 @@
           <!-- Input Box & Send Button -->
           <div class="flex items-end gap-2">
             <div class="flex-1 relative bg-tg-darkCard rounded-2xl border border-tg-darkBorder focus-within:border-blue-500 transition-colors">
-              <textarea id="messageInput" rows="1" placeholder="Viết tin nhắn cho kênh... (Enter để gửi, Shift+Enter xuống dòng)" class="w-full px-4 py-2.5 text-sm bg-transparent border-0 focus:outline-none resize-none max-h-32 text-gray-100 placeholder-gray-500"></textarea>
+              <textarea id="messageInput" rows="1" placeholder="Viết tin nhắn cho kênh... (Enter gửi, Shift+Enter xuống dòng)" class="w-full px-4 py-2.5 text-sm bg-transparent border-0 focus:outline-none resize-none max-h-32 text-gray-100 placeholder-gray-500"></textarea>
             </div>
 
             <button id="sendMessageBtn" class="w-11 h-11 rounded-full bg-blue-500 hover:bg-blue-600 active:scale-95 text-white flex items-center justify-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all flex-shrink-0" title="Gửi tin nhắn">
@@ -313,20 +357,20 @@
       </div>
     </footer>
 
-    <!-- ========================================== -->
-    <!-- 4. MODALS (AUTH, ADMIN, EDIT) -->
-    <!-- ========================================== -->
+    <!-- ============================================================== -->
+    <!-- 4. MODALS (AUTH, ADMIN PANEL, EDIT MESSAGE, CHANNEL INFO)      -->
+    <!-- ============================================================== -->
 
-    <!-- Modal 1: Auth Modal (Login / Register) -->
+    <!-- Modal 1: Auth Modal (Login / Register with SHA-256) -->
     <div id="authModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-tg-darkSurface border border-tg-darkBorder rounded-2xl w-full max-w-md shadow-2xl overflow-hidden transition-all transform">
+      <div class="bg-tg-darkSurface border border-tg-darkBorder rounded-2xl w-full max-w-md shadow-2xl overflow-hidden transition-all">
         
         <div class="p-4 sm:p-5 border-b border-tg-darkBorder flex items-center justify-between">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">TG</div>
             <div>
               <h3 id="authModalTitle" class="font-bold text-white text-base">Đăng nhập Telegram</h3>
-              <p class="text-xs text-tg-darkTextSub">Xác thực với Backend PHP (api.php)</p>
+              <p class="text-xs text-tg-darkTextSub">Xác thực bảo mật với api.php</p>
             </div>
           </div>
           <button id="closeAuthModalBtn" class="p-1.5 text-gray-400 hover:text-gray-200 rounded-lg">
@@ -358,12 +402,12 @@
             <input type="password" id="passwordInput" required placeholder="Nhập mật khẩu..." class="w-full px-3.5 py-2 rounded-lg text-sm bg-tg-darkCard border border-tg-darkBorder text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <p class="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
               <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-              <span>Mật khẩu được mã hóa SHA-256 an toàn trong node /users.json trên Firebase.</span>
+              <span>Mã hóa SHA-256 qua Web Crypto API trước khi gửi đi.</span>
             </p>
           </div>
 
           <div id="registerPendingNotice" class="hidden p-2.5 rounded-lg bg-amber-950/30 text-xs text-amber-300 border border-amber-800/40">
-            ⚠️ <strong>Lưu ý:</strong> Tài khoản đăng ký mới sẽ ở trạng thái <code>Chờ duyệt (Pending)</code>. Admin cần phê duyệt trước khi bạn có thể đăng tin.
+            ⚠️ <strong>Lưu ý:</strong> Thành viên đăng ký mới sẽ ở trạng thái <code>Chờ duyệt (Pending)</code>. Admin cần phê duyệt trước khi bạn có thể đăng tin.
           </div>
 
           <div id="authAlert" class="hidden p-2.5 rounded-lg text-xs font-medium"></div>
@@ -400,6 +444,7 @@
           </button>
           <button id="adminTabUsers" class="flex-1 py-2.5 border-b-2 border-transparent text-gray-400 hover:text-gray-200">Tất cả tài khoản</button>
           <button id="adminTabSettings" class="flex-1 py-2.5 border-b-2 border-transparent text-gray-400 hover:text-gray-200">Cài đặt kênh</button>
+          <button id="adminTabDeploy" class="flex-1 py-2.5 border-b-2 border-transparent text-gray-400 hover:text-gray-200">Hướng dẫn PHP</button>
         </div>
 
         <!-- Tab 1: Pending Users -->
@@ -434,6 +479,20 @@
           </form>
         </div>
 
+        <!-- Tab 4: Deploy & Instructions -->
+        <div id="adminDeployContent" class="p-4 overflow-y-auto flex-1 hidden space-y-4 text-xs text-gray-300">
+          <div class="p-3 bg-blue-950/40 border border-blue-800/60 rounded-xl space-y-2">
+            <h4 class="font-bold text-white text-sm flex items-center gap-1.5">
+              <span>🚀 Triển khai trên Máy chủ PHP</span>
+            </h4>
+            <p>1. Copy 2 file: <code>index.html</code> và <code>api.php</code> vào thư mục website của bạn (ví dụ: <code>public_html/</code> hoặc <code>htdocs/</code>).</p>
+            <p>2. Mở file <code>api.php</code>, chỉnh sửa dòng cấu hình URL Firebase Realtime Database nếu muốn lưu trữ Firebase Cloud:</p>
+            <pre class="bg-black/60 p-2 rounded text-emerald-400 font-mono text-[11px] overflow-x-auto">$firebaseDbUrl = "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com";</pre>
+            <p>3. Truy cập vào domain của bạn trên trình duyệt. Đăng nhập với tài khoản Admin mặc định:</p>
+            <div class="bg-black/40 p-2 rounded text-amber-300 font-mono text-[11px]">Username: admin | Password: 0386744127</div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -462,9 +521,9 @@
     <!-- TOAST CONTAINER -->
     <div id="toastContainer" class="fixed bottom-20 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- ========================================================================= -->
-    <!-- 5. JAVASCRIPT POLLING & CLIENT LOGIC -->
-    <!-- ========================================================================= -->
+    <!-- ============================================================== -->
+    <!-- 5. JAVASCRIPT POLLING & CLIENT LOGIC                           -->
+    <!-- ============================================================== -->
     <script>
       const API_URL = 'api.php';
       const STORAGE_USER_SESSION = 'tg_php_rest_session_user';
@@ -485,8 +544,23 @@
         isRateLimited: false,
         editingMessageId: null,
         activeTab: 'login',
-        activeAdminTab: 'pending'
+        activeAdminTab: 'pending',
+        isDarkMode: true
       };
+
+      // --- SHA-256 HASH VIA WEB CRYPTO API ---
+      async function hashPasswordSHA256(password) {
+        if (!password) return '';
+        try {
+          const encoder = new TextEncoder();
+          const data = encoder.encode(password);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch(e) {
+          return password;
+        }
+      }
 
       // --- WEB AUDIO API: TELEGRAM NOTIFICATION CHIME ---
       let soundEnabled = localStorage.getItem('tg_sound_enabled') !== 'false';
@@ -505,7 +579,7 @@
           osc.connect(gain);
           gain.connect(audioCtx.destination);
 
-          // Iconic Telegram chime: D5 -> A5
+          // Iconic Telegram chime frequencies: D5 (587Hz) -> A5 (880Hz)
           osc.frequency.setValueAtTime(587.33, now);
           osc.frequency.setValueAtTime(880.00, now + 0.08);
 
@@ -528,7 +602,7 @@
         }
       }
 
-      // XSS Sanitizer
+      // XSS Sanitizer with DOMPurify
       function sanitizeText(raw) {
         if (!raw) return '';
         let clean = typeof DOMPurify !== 'undefined'
@@ -542,7 +616,7 @@
         return clean.replace(/\n/g, '<br/>');
       }
 
-      // --- FETCH API CALL TO api.php (WITH SEAMLESS FALLBACK) ---
+      // --- FETCH API CALL TO api.php (WITH AUTOMATIC PREVIEW FALLBACK) ---
       async function apiFetch(action, options = {}) {
         const url = `${API_URL}?action=${encodeURIComponent(action)}`;
         const headers = {
@@ -551,6 +625,7 @@
         };
         if (state.currentUser && state.currentUser.token) {
           headers['X-User-Token'] = state.currentUser.token;
+          headers['Authorization'] = `Bearer ${state.currentUser.token}`;
         }
 
         try {
@@ -583,24 +658,31 @@
         const text = document.getElementById('serverStatusText');
         if (isOnline) {
           badge.className = "inline-flex items-center gap-1 font-medium text-emerald-400";
-          text.textContent = "PHP + Firebase REST Online";
+          text.textContent = "api.php (2s Polling)";
         } else {
           badge.className = "inline-flex items-center gap-1 font-medium text-blue-400";
-          text.textContent = "Môi trường Xem trước (Ready)";
+          text.textContent = "Xem trước (Sẵn sàng PHP)";
         }
       }
 
-      // In-browser mock engine ensuring 100% interactivity when previewing before hosting PHP
+      // In-browser mock engine ensuring 100% full interactivity during dev/preview
       function fallbackLocalApi(action, options) {
         let localCache = JSON.parse(localStorage.getItem(STORAGE_LOCAL_CACHE) || 'null');
         if (!localCache) {
           const now = Date.now();
           localCache = {
             users: {
-              'usr_admin': { id: 'usr_admin', username: 'admin', role: 'admin', status: 'approved', token: 'mock_admin_token' }
+              'usr_admin': {
+                id: 'usr_admin',
+                username: 'admin',
+                passwordHash: '267cae80ce3fea93e60a755bf0ee2f7f7f2a1c2198a48c93a0730dff6b575a77',
+                role: 'admin',
+                status: 'approved',
+                token: 'mock_admin_token'
+              }
             },
             channel: {
-              name: 'Kênh Tin Tức Telegram (PHP + Firebase REST) 🚀',
+              name: 'Kênh Tin Tức Telegram 🚀',
               avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80',
               description: 'Ứng dụng đã sẵn sàng chạy trên Máy chủ PHP kết nối Firebase REST API qua api.php.',
               subscribersCount: 1248,
@@ -610,7 +692,7 @@
               'msg_01': {
                 id: 'msg_01',
                 author: 'admin',
-                text: '🌟 Chào mừng bạn! Mã nguồn backend api.php (dùng cURL gọi Firebase REST API .json) đã được cập nhật hoàn chỉnh.\n\nKhi upload 2 file index.html và api.php lên host PHP, toàn bộ tin nhắn và tài khoản sẽ được đồng bộ trực tiếp tới Firebase Realtime Database!',
+                text: '🌟 Chào mừng bạn đến với Kênh tin nhắn Telegram!\n\n- Giao diện chuẩn Telegram Dark Mode (#0e1621), hỗ trợ Dark/Light mode.\n- Tin nhắn mới nhất nằm TRÊN CÙNG (Reverse chronological order).\n- Kết nối trực tiếp file api.php qua REST API JSON.\n- Rate Limiting 2 giây chống spam & Mã hóa mật khẩu SHA-256.',
                 timestamp: now - 3600000,
                 isPinned: true,
                 isEdited: false,
@@ -626,7 +708,7 @@
         if (action === 'get_data') {
           return {
             status: 'success',
-            server: 'Local Mock / PHP Ready',
+            server: 'Local Preview / PHP Ready',
             channel_info: localCache.channel,
             messages: localCache.messages,
             approved_members: Object.values(localCache.users).filter(u => u.status === 'approved').length
@@ -637,14 +719,18 @@
           if (user) {
             return { status: 'success', token: user.token || 'mock_token', user };
           }
-          return { status: 'error', message: 'Tên đăng nhập không đúng!' };
+          if (username.toLowerCase() === 'admin') {
+            const adminUser = localCache.users['usr_admin'];
+            return { status: 'success', token: adminUser.token, user: adminUser };
+          }
+          return { status: 'error', message: 'Tên đăng nhập hoặc mật khẩu không đúng!' };
         } else if (action === 'register') {
           const newId = 'usr_' + Date.now();
           const newUser = { id: newId, username: body.username, role: 'user', status: 'pending', token: 'token_' + newId };
           localCache.users[newId] = newUser;
           localStorage.setItem(STORAGE_LOCAL_CACHE, JSON.stringify(localCache));
           return { status: 'success', token: newUser.token, user: newUser };
-        } else if (action === 'send_message') {
+        } else if (action === 'post_message' || action === 'send_message') {
           const newId = 'msg_' + Date.now();
           const newMsg = {
             id: newId,
@@ -710,7 +796,7 @@
           }
           return { status: 'success' };
         }
-        return { status: 'error', message: 'Action mock error' };
+        return { status: 'error', message: 'Unknown mock action' };
       }
 
       // --- REALTIME SYNC (POLLING EVERY 2 SECONDS) ---
@@ -793,7 +879,7 @@
       }
 
       /**
-       * RENDER MESSAGES FEED (REVERSE ORDER: NEWEST ON TOP)
+       * RENDER MESSAGES FEED (REVERSE CHRONOLOGICAL ORDER: NEWEST ON TOP)
        */
       function renderMessages() {
         const container = document.getElementById('messagesList');
@@ -814,7 +900,7 @@
           container.innerHTML = `
             <div class="text-center py-12 text-gray-400 text-sm flex flex-col items-center gap-2">
               <span class="text-3xl">📭</span>
-              <span>${state.searchQuery ? 'Không tìm thấy tin nhắn.' : 'Chưa có tin nhắn nào trong kênh.'}</span>
+              <span>${state.searchQuery ? 'Không tìm thấy tin nhắn phù hợp.' : 'Chưa có tin nhắn nào trong kênh.'}</span>
             </div>
           `;
           return;
@@ -834,8 +920,12 @@
           const dateStr = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
           const sanitizedText = sanitizeText(msg.text);
 
+          const bubbleBg = isPinned 
+            ? 'bg-tg-darkCard border-blue-500/60 ring-1 ring-blue-500/40' 
+            : (msg.author === 'admin' ? 'bg-tg-darkCard border-tg-darkBorder' : 'bg-tg-darkCard border-tg-darkBorder');
+
           return `
-            <div id="msg-${msg.id}" class="message-card group relative flex flex-col transition-all duration-300 ${isPinned ? 'ring-2 ring-blue-500/40 rounded-2xl p-1' : ''}">
+            <div id="msg-${msg.id}" data-id="${msg.id}" class="message-card group relative flex flex-col transition-all duration-300">
               
               ${isPinned ? `
                 <div class="flex items-center gap-1 text-[11px] font-bold text-blue-400 mb-1 px-2 select-none">
@@ -844,12 +934,12 @@
                 </div>
               ` : ''}
 
-              <!-- Telegram Dark Bubble Box -->
-              <div class="relative bg-tg-darkCard rounded-2xl px-4 py-3 border border-tg-darkBorder bubble-shadow hover:border-blue-400/50 transition-colors">
+              <!-- Telegram Chat Bubble Box -->
+              <div class="relative ${bubbleBg} rounded-2xl px-4 py-3 border bubble-shadow-dark hover:border-blue-400/50 transition-colors">
                 
                 <div class="flex items-center justify-between gap-2 mb-1.5">
                   <div class="flex items-center gap-1.5">
-                    <span class="font-bold text-xs sm:text-sm text-tg-blueDark flex items-center gap-1">
+                    <span class="font-bold text-xs sm:text-sm text-blue-400 flex items-center gap-1">
                       ${msg.author === 'admin' ? '👑 ' : ''}${msg.author}
                     </span>
                     ${msg.author === 'admin' ? `
@@ -857,11 +947,12 @@
                     ` : ''}
                   </div>
 
+                  <!-- 3-Dots / Options Menu -->
                   <div class="relative">
                     <button class="msg-menu-btn p-1 text-gray-400 hover:text-gray-200 rounded-lg hover:bg-tg-darkSurface transition-colors" data-id="${msg.id}" title="Tùy chọn">
                       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                     </button>
-                    <div id="menu-dropdown-${msg.id}" class="hidden absolute right-0 top-6 z-20 w-40 bg-tg-darkSurface rounded-xl shadow-xl border border-tg-darkBorder py-1 text-xs font-semibold overflow-hidden">
+                    <div id="menu-dropdown-${msg.id}" class="hidden absolute right-0 top-6 z-20 w-40 bg-tg-darkSurface rounded-xl shadow-2xl border border-tg-darkBorder py-1 text-xs font-semibold overflow-hidden context-menu-pop">
                       <button class="w-full px-3 py-2 text-left hover:bg-tg-darkCard flex items-center gap-2 copy-btn" data-text="${encodeURIComponent(msg.text)}">
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                         <span>Sao chép</span>
@@ -888,20 +979,22 @@
                   </div>
                 </div>
 
+                <!-- Text Body -->
                 <div class="text-sm leading-relaxed text-gray-100 break-words font-normal">
                   ${sanitizedText}
                 </div>
 
+                <!-- Metadata Row (Edited, Views, Timestamp, Double Check) -->
                 <div class="flex items-center justify-end gap-2.5 mt-2 pt-1 border-t border-tg-darkBorder/40 text-[11px] text-tg-darkTextSub select-none">
                   ${msg.isEdited ? `<span class="italic text-gray-500">đã sửa</span>` : ''}
 
-                  <button class="view-increment-btn flex items-center gap-1 hover:text-blue-400 transition-colors" data-id="${msg.id}" title="Lượt xem">
+                  <button class="view-increment-btn flex items-center gap-1 hover:text-blue-400 transition-colors" data-id="${msg.id}" title="Lượt xem (Bấm để tăng)">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                     <span>${msg.views || 1}</span>
                   </button>
 
                   <span title="${dateStr}">${timeStr}</span>
-                  <span class="text-blue-400 font-bold" title="Đã gửi">✓✓</span>
+                  <span class="text-blue-400 font-bold" title="Đã chuyển giao">✓✓</span>
                 </div>
 
               </div>
@@ -913,6 +1006,7 @@
       }
 
       function attachMessageEventHandlers() {
+        // 3-Dots Menu Click
         document.querySelectorAll('.msg-menu-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -925,6 +1019,22 @@
           });
         });
 
+        // Right-Click Context Menu on Message Cards
+        document.querySelectorAll('.message-card').forEach(card => {
+          card.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const id = card.getAttribute('data-id');
+            const menu = document.getElementById(`menu-dropdown-${id}`);
+            if (menu) {
+              document.querySelectorAll('[id^="menu-dropdown-"]').forEach(m => {
+                if (m !== menu) m.classList.add('hidden');
+              });
+              menu.classList.remove('hidden');
+            }
+          });
+        });
+
+        // Copy Message
         document.querySelectorAll('.copy-btn').forEach(btn => {
           btn.addEventListener('click', () => {
             const text = decodeURIComponent(btn.getAttribute('data-text') || '');
@@ -934,6 +1044,7 @@
           });
         });
 
+        // Pin Message
         document.querySelectorAll('.pin-btn').forEach(btn => {
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-id');
@@ -948,6 +1059,7 @@
           });
         });
 
+        // Edit Message Trigger
         document.querySelectorAll('.edit-btn').forEach(btn => {
           btn.addEventListener('click', () => {
             const id = btn.getAttribute('data-id');
@@ -956,11 +1068,13 @@
               state.editingMessageId = id;
               document.getElementById('editMessageInput').value = msg.text;
               document.getElementById('editMessageModal').classList.remove('hidden');
+              document.getElementById('editMessageInput').focus();
             }
             closeAllMenus();
           });
         });
 
+        // Delete Message
         document.querySelectorAll('.delete-btn').forEach(btn => {
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-id');
@@ -976,6 +1090,7 @@
           });
         });
 
+        // Increment Views
         document.querySelectorAll('.view-increment-btn').forEach(btn => {
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-id');
@@ -1039,7 +1154,7 @@
         }
       }
 
-      // --- SEND MESSAGE WITH 2S RATE LIMITING ---
+      // --- SEND MESSAGE WITH 2S RATE LIMITING (post_message) ---
       let lastSentTimestamp = 0;
 
       async function handleSendMessage() {
@@ -1070,7 +1185,7 @@
         input.value = '';
         if (pinCheckbox) pinCheckbox.checked = false;
 
-        const res = await apiFetch('send_message', {
+        const res = await apiFetch('post_message', {
           method: 'POST',
           body: JSON.stringify({ text: rawText, isPinned: shouldPin })
         });
@@ -1192,6 +1307,9 @@
                   <button class="toggle-role-btn px-2.5 py-1 text-xs rounded border border-gray-700 hover:bg-gray-800 text-gray-200" data-id="${u.id}">
                     ${u.role === 'admin' ? 'Hạ xuống User' : 'Nâng lên Admin'}
                   </button>
+                  <button class="delete-user-btn px-2.5 py-1 text-xs rounded border border-red-900/60 hover:bg-red-900/40 text-red-400" data-id="${u.id}">
+                    Xóa
+                  </button>
                 ` : '<span class="text-xs text-gray-400 italic">Bạn</span>'}
               </div>
             </div>
@@ -1204,6 +1322,17 @@
             await apiFetch('toggle_role', { method: 'POST', body: JSON.stringify({ id }) });
             showToast("Đã cập nhật vai trò người dùng!", "success");
             loadAdminUsers();
+          });
+        });
+
+        usersContainer.querySelectorAll('.delete-user-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.getAttribute('data-id');
+            if (confirm("Bạn có chắc chắn muốn xóa tài khoản này?")) {
+              await apiFetch('reject_user', { method: 'POST', body: JSON.stringify({ id }) });
+              showToast("Đã xóa tài khoản.", "info");
+              loadAdminUsers();
+            }
           });
         });
       }
@@ -1286,6 +1415,28 @@
           }
         });
 
+        // Theme toggle (Dark / Light)
+        const toggleThemeBtn = document.getElementById('toggleThemeBtn');
+        const themeSunIcon = document.getElementById('themeSunIcon');
+        const themeMoonIcon = document.getElementById('themeMoonIcon');
+        const mainContainer = document.getElementById('mainContainer');
+
+        toggleThemeBtn.addEventListener('click', () => {
+          state.isDarkMode = !state.isDarkMode;
+          document.documentElement.classList.toggle('dark', state.isDarkMode);
+          if (state.isDarkMode) {
+            themeSunIcon.classList.remove('hidden');
+            themeMoonIcon.classList.add('hidden');
+            mainContainer.className = "flex-1 tg-chat-bg-dark relative overflow-y-auto";
+            showToast("Chế độ Tối (Telegram Dark Mode)", "info");
+          } else {
+            themeSunIcon.classList.add('hidden');
+            themeMoonIcon.classList.remove('hidden');
+            mainContainer.className = "flex-1 tg-chat-bg-light relative overflow-y-auto";
+            showToast("Chế độ Sáng (Telegram Light Mode)", "info");
+          }
+        });
+
         // Search
         const toggleSearchBtn = document.getElementById('toggleSearchBtn');
         const searchContainer = document.getElementById('searchBarContainer');
@@ -1317,6 +1468,23 @@
           clearSearchBtn.classList.add('hidden');
           renderMessages();
           searchInput.focus();
+        });
+
+        // Pinned Header Button
+        document.getElementById('viewPinnedHeaderBtn').addEventListener('click', () => {
+          const pinnedId = state.channelInfo.pinnedMessageId;
+          if (pinnedId) {
+            const el = document.getElementById(`msg-${pinnedId}`);
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              el.classList.add('highlight-target');
+              setTimeout(() => el.classList.remove('highlight-target'), 2000);
+            } else {
+              showToast("Tin ghim hiện không nằm trong bộ lọc tìm kiếm", "info");
+            }
+          } else {
+            showToast("Kênh hiện chưa có tin ghim nào.", "info");
+          }
         });
 
         // Pinned Bar click: smooth scroll to pinned message
@@ -1355,7 +1523,7 @@
         // Auth Buttons
         document.getElementById('authBtn').addEventListener('click', () => {
           if (state.currentUser) {
-            if (confirm(`Bạn đang đăng nhập: ${state.currentUser.username}\nĐăng xuất khỏi phiên?`)) {
+            if (confirm(`Bạn đang đăng nhập: ${state.currentUser.username}\nĐăng xuất khỏi phiên làm việc?`)) {
               state.currentUser = null;
               localStorage.removeItem(STORAGE_USER_SESSION);
               updateAuthUI();
@@ -1379,20 +1547,28 @@
         document.getElementById('tabLoginBtn').addEventListener('click', () => showAuthModal('login'));
         document.getElementById('tabRegisterBtn').addEventListener('click', () => showAuthModal('register'));
 
-        // Auth Form Submit
+        // Auth Form Submit (with SHA-256 password hash)
         document.getElementById('authForm').addEventListener('submit', async (e) => {
           e.preventDefault();
           const username = document.getElementById('usernameInput').value.trim();
-          const password = document.getElementById('passwordInput').value.trim();
+          const rawPassword = document.getElementById('passwordInput').value.trim();
           const alertBox = document.getElementById('authAlert');
 
-          if (!username || !password) return;
+          if (!username || !rawPassword) return;
+
+          const submitBtn = document.getElementById('authSubmitBtn');
+          submitBtn.disabled = true;
+
+          // Hash password with Web Crypto API SHA-256
+          const passwordHash = await hashPasswordSHA256(rawPassword);
 
           const action = state.activeTab === 'login' ? 'login' : 'register';
           const res = await apiFetch(action, {
             method: 'POST',
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, password: passwordHash })
           });
+
+          submitBtn.disabled = false;
 
           if (res && res.status === 'success') {
             state.currentUser = { ...res.user, token: res.token };
@@ -1419,6 +1595,7 @@
         document.getElementById('adminTabPending').addEventListener('click', () => switchAdminTab('pending'));
         document.getElementById('adminTabUsers').addEventListener('click', () => switchAdminTab('users'));
         document.getElementById('adminTabSettings').addEventListener('click', () => switchAdminTab('settings'));
+        document.getElementById('adminTabDeploy').addEventListener('click', () => switchAdminTab('deploy'));
 
         document.getElementById('channelSettingsForm').addEventListener('submit', async (e) => {
           e.preventDefault();
@@ -1436,7 +1613,7 @@
           }
         });
 
-        // Edit Message
+        // Edit Message Modal
         document.getElementById('closeEditModalBtn').addEventListener('click', () => document.getElementById('editMessageModal').classList.add('hidden'));
         document.getElementById('cancelEditBtn').addEventListener('click', () => document.getElementById('editMessageModal').classList.add('hidden'));
 
@@ -1464,7 +1641,7 @@
           }
         });
 
-        // Emoji buttons
+        // Quick Emoji buttons
         document.querySelectorAll('.emoji-btn').forEach(btn => {
           btn.addEventListener('click', () => {
             const input = document.getElementById('messageInput');
@@ -1479,15 +1656,17 @@
         const pendingBtn = document.getElementById('adminTabPending');
         const usersBtn = document.getElementById('adminTabUsers');
         const settingsBtn = document.getElementById('adminTabSettings');
+        const deployBtn = document.getElementById('adminTabDeploy');
 
         const pendingContent = document.getElementById('adminPendingContent');
         const usersContent = document.getElementById('adminUsersContent');
         const settingsContent = document.getElementById('adminSettingsContent');
+        const deployContent = document.getElementById('adminDeployContent');
 
-        [pendingBtn, usersBtn, settingsBtn].forEach(b => {
+        [pendingBtn, usersBtn, settingsBtn, deployBtn].forEach(b => {
           b.className = "flex-1 py-2.5 border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center justify-center gap-1.5";
         });
-        [pendingContent, usersContent, settingsContent].forEach(c => c.classList.add('hidden'));
+        [pendingContent, usersContent, settingsContent, deployContent].forEach(c => c.classList.add('hidden'));
 
         if (tab === 'pending') {
           pendingBtn.className = "flex-1 py-2.5 border-b-2 border-blue-500 text-blue-400 flex items-center justify-center gap-1.5 font-bold";
@@ -1495,9 +1674,12 @@
         } else if (tab === 'users') {
           usersBtn.className = "flex-1 py-2.5 border-b-2 border-blue-500 text-blue-400 flex items-center justify-center gap-1.5 font-bold";
           usersContent.classList.remove('hidden');
-        } else {
+        } else if (tab === 'settings') {
           settingsBtn.className = "flex-1 py-2.5 border-b-2 border-blue-500 text-blue-400 flex items-center justify-center gap-1.5 font-bold";
           settingsContent.classList.remove('hidden');
+        } else {
+          deployBtn.className = "flex-1 py-2.5 border-b-2 border-blue-500 text-blue-400 flex items-center justify-center gap-1.5 font-bold";
+          deployContent.classList.remove('hidden');
         }
       }
 

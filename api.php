@@ -275,7 +275,8 @@ switch ($action) {
             sendJsonResponse(['status' => 'error', 'message' => 'Vui lòng nhập tên đăng nhập và mật khẩu.'], 400);
         }
 
-        $passwordHash = hash('sha256', $password);
+        // Hỗ trợ mật khẩu đã hash SHA-256 từ client (Web Crypto API) hoặc hash tại server
+        $passwordHash = (strlen($password) === 64 && ctype_xdigit($password)) ? strtolower($password) : hash('sha256', $password);
 
         // Đọc danh sách users từ Firebase: GET /users.json
         $usersRes = firebaseRestCall('users', 'GET');
@@ -351,7 +352,8 @@ switch ($action) {
         }
 
         $newId = 'usr_' . time() . '_' . mt_rand(100, 999);
-        $passwordHash = hash('sha256', $password);
+        // Hỗ trợ mật khẩu đã hash SHA-256 từ client hoặc hash tại server
+        $passwordHash = (strlen($password) === 64 && ctype_xdigit($password)) ? strtolower($password) : hash('sha256', $password);
         $token = hash('sha256', $newId . '_' . time());
 
         $newUser = [
@@ -381,6 +383,7 @@ switch ($action) {
         break;
 
     // --- 4. GỬI TIN NHẮN (POST /messages.json) - RATE LIMITING 2 GIÂY ---
+    case 'post_message':
     case 'send_message':
         $user = authenticateUser($postData);
         if (!$user) {
