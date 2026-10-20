@@ -1,0 +1,6 @@
+{
+  "name": "Telegram Channel Web",
+  "description": "Kênh tin nhắn Telegram thời gian thực với phân quyền Admin, mã hóa mật khẩu, chống XSS, Rate Limiting và Firebase Realtime Database.",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
